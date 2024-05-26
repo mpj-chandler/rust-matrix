@@ -1,3 +1,7 @@
+use matrix::Matrix;
+
 fn main() {
-    println!("Hello, world!");
+    let test_matrix = Matrix::new(4, 4);
+
+    test_matrix.print();
 }
