@@ -6,7 +6,7 @@ pub mod matrix_algebra {
 	}
 
 	impl Matrix {
-		pub fn new(n: usize, m: usize, value: i32) -> Matrix {
+		pub fn new(m: usize, n: usize, value: i32) -> Matrix {
 			let row_vec = vec![value; n];
 			Matrix {
 				entries: vec![row_vec; m],
@@ -25,7 +25,17 @@ pub mod matrix_algebra {
 		}
 	}
 
-	pub fn matrix_multiply(_a: Matrix, _b: Matrix) -> Matrix {
+	fn is_multiplicatively_conformable(a: Matrix, b: Matrix) -> bool {
+		let n = a.entries[0].len();
+		let n_prime = b.entries.len();
+
+		n == n_prime
+	}
+
+	pub fn matrix_multiply(a: Matrix, b: Matrix) -> Matrix {
+		if !is_multiplicatively_conformable(a, b) {
+			panic!("Matrices are not multiplicatively conformable!");
+		}
 		Matrix::new(4, 4, 0)
 	}
 }
@@ -42,13 +52,22 @@ mod tests {
 		let mut rng = rand::thread_rng();
 		let n = rng.gen_range(1..=100);
 		let m = rng.gen_range(1..=100);
-		let test_matrix = Matrix::new(n, m, 0);
+		let test_matrix = Matrix::new(m, n, 0);
 
     	assert_eq!(test_matrix.entries.len(), m);
 
     	for row in test_matrix.entries {
     		assert_eq!(row.len(),n);
     	}
+	}
+
+	#[test]
+	#[should_panic]
+	fn test_panic_on_non_multiplicatively_conformable_matrices() {
+		let test_matrix_a = Matrix::new(3, 4, 5);
+		let test_matrix_b = Matrix::new(5, 7, 4);
+
+		matrix_multiply(test_matrix_a, test_matrix_b);
 	}
 
 	#[test]
