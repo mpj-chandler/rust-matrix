@@ -1,12 +1,13 @@
+pub mod matrix_algebra {
 use std::fmt;
 
 pub struct Matrix {
-	entries: Vec<Vec<i32>>,
+	pub entries: Vec<Vec<i32>>,
 }
 
 impl Matrix {
-	pub fn new(n: usize, m: usize) -> Matrix {
-		let row_vec = vec![0; n];
+	pub fn new(n: usize, m: usize, value: i32) -> Matrix {
+		let row_vec = vec![value; n];
 		Matrix {
 			entries: vec![row_vec; m],
 		}
@@ -23,10 +24,12 @@ impl fmt::Display for Matrix {
 		Ok(())
 	}
 }
+}
 
 #[cfg(test)]
 mod tests {
-	use super::*;
+	use crate::matrix_algebra::Matrix;
+
 	use rand::prelude::*;
 
 	#[test]
@@ -34,7 +37,7 @@ mod tests {
 		let mut rng = rand::thread_rng();
 		let n = rng.gen_range(1..=100);
 		let m = rng.gen_range(1..=100);
-		let test_matrix = Matrix::new(n, m);
+		let test_matrix = Matrix::new(n, m, 0);
 
     	assert_eq!(test_matrix.entries.len(), m);
 
