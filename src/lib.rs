@@ -27,15 +27,19 @@ impl fmt::Display for Matrix {
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use rand::prelude::*;
 
 	#[test]
 	fn test_initialiser() {
-		let test_matrix = Matrix::new(4, 4);
+		let mut rng = rand::thread_rng();
+		let n = rng.gen_range(1..=100);
+		let m = rng.gen_range(1..=100);
+		let test_matrix = Matrix::new(n, m);
 
-    	assert_eq!(test_matrix.entries.len(), 4);
+    	assert_eq!(test_matrix.entries.len(), m);
 
     	for row in test_matrix.entries {
-    		assert_eq!(row.len(), 4);
+    		assert_eq!(row.len(),n);
     	}
 	}
 }
