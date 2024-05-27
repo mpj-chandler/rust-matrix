@@ -2,15 +2,36 @@ pub mod matrix_algebra {
 	use std::fmt;
 
 	pub struct Matrix {
+		pub n: usize,
+		pub m: usize,
 		pub entries: Vec<Vec<i32>>,
 	}
 
 	impl Matrix {
 		pub fn new(m: usize, n: usize, value: i32) -> Matrix {
+			if m == 0 || n == 0 {
+				panic!("Matrix dimensions must each be greater than zero!");
+			}
 			let row_vec = vec![value; n];
 			Matrix {
+				n: n,
+				m: m,
 				entries: vec![row_vec; m],
 			}
+		}
+
+		pub fn columns(self) -> Vec<Vec<i32>> {
+			let n = self.n;
+			let m = self.m;
+
+			let mut columns = vec![vec![0; m]; n];
+			for row_index in 0..m {
+				for column_index in 0..n {
+					columns[column_index][row_index] = self.entries[row_index][column_index];
+				}
+			}
+
+			columns
 		}
 	}
 
@@ -59,6 +80,18 @@ mod tests {
     	for row in test_matrix.entries {
     		assert_eq!(row.len(),n);
     	}
+	}
+
+	#[test]
+	#[should_panic]
+	fn test_zero_first_argument_to_initialiser() {
+		let _test_matrix = Matrix::new(0, 1, 1);
+	}
+
+	#[test]
+	#[should_panic]
+	fn test_zero_second_argument_to_initialiser() {
+		let _test_matrix = Matrix::new(1, 0, 1);
 	}
 
 	#[test]
