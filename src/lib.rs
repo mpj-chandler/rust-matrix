@@ -1,6 +1,7 @@
 pub mod matrix_algebra {
 	use std::fmt;
 
+	#[derive(Clone)]
 	pub struct Matrix {
 		pub n: usize,
 		pub m: usize,
@@ -54,10 +55,22 @@ pub mod matrix_algebra {
 	}
 
 	pub fn matrix_multiply(a: Matrix, b: Matrix) -> Matrix {
-		if !is_multiplicatively_conformable(a, b) {
+		if !is_multiplicatively_conformable(a.clone(), b.clone()) {
 			panic!("Matrices are not multiplicatively conformable!");
 		}
-		Matrix::new(4, 4, 0)
+
+		let mut c = Matrix::new(b.entries[0].len(), a.entries.len(), 0);
+
+		for (i, a_row) in a.entries.iter().enumerate() {
+			for (k, a_ik) in a_row.iter().enumerate() {
+				for (j, b_kj) in b.entries[k].iter().enumerate() {
+					println!("C[{}{}] = A[{}{}] * B[{}{}]", i, j, i, k, k, j);
+					println!("C[{}{}] = {} * {}", i, j, a_ik, b_kj);
+					c.entries[i][j] = a_ik * b_kj;
+				}	
+			}
+		}
+		c
 	}
 }
 
@@ -106,10 +119,16 @@ mod tests {
 	#[test]
 	fn test_matrix_multiply() {
 		let test_matrix_a = Matrix::new(3, 4, 5);
-		let test_matrix_b = Matrix::new(5, 3, 4);
+		let test_matrix_b = Matrix::new(4, 3, 4);
+
+		println!("{} \n{}", test_matrix_a, test_matrix_b);
 
 		let matrix_product = matrix_multiply(test_matrix_a, test_matrix_b);
 
-		assert_eq!(matrix_product.entries.len(), 7);
+		assert_eq!(matrix_product.entries.len(), 3);
+		
+		assert_eq!(matrix_product.entries[0], [20, 20, 20]);
+		assert_eq!(matrix_product.entries[1], [20, 20, 20]);
+		assert_eq!(matrix_product.entries[2], [20, 20, 20]);
 	}
 }
