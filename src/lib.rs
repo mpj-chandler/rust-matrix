@@ -1,5 +1,6 @@
 pub mod matrix_algebra {
     use std::fmt;
+    use std::ops::Add;
 
     #[derive(Clone)]
     pub struct Matrix {
@@ -56,11 +57,34 @@ pub mod matrix_algebra {
         }
     }
 
+    impl Add for Matrix {
+        type Output = Self;
+
+        fn add(self, other: Self) -> Self {
+            if !is_additively_conformable(self.clone(), other.clone()) {
+                panic!("Matrices are not additively conformable!")
+            }
+
+            let mut sum_matrix = Matrix::new_constant_value(self.m, self.n, 0);
+
+            for i in 0..sum_matrix.entries.len() {
+                for j in 0..sum_matrix.entries[i].len() {
+                    sum_matrix.entries[i][j] = &self.entries[i][j] + &other.entries[i][j];
+                }
+            }
+            sum_matrix
+        }
+    }
+
     fn is_multiplicatively_conformable(a: Matrix, b: Matrix) -> bool {
         let n = a.entries[0].len();
         let n_prime = b.entries.len();
 
         n == n_prime
+    }
+
+    fn is_additively_conformable(a: Matrix, b: Matrix) -> bool {
+        a.n == b.n && a.m == b.m
     }
 
     pub fn matrix_multiply(a: Matrix, b: Matrix) -> Matrix {
@@ -87,6 +111,7 @@ pub mod matrix_algebra {
 mod tests {
     use crate::matrix_algebra::matrix_multiply;
     use crate::matrix_algebra::Matrix;
+    use std::ops::Add;
 
     use rand::prelude::*;
 
@@ -167,11 +192,32 @@ mod tests {
     }
 
     #[test]
+    #[should_panic]
+    fn test_panic_on_non_additively_conformable_matrices() {
+        let test_matrix_a = Matrix::new_constant_value(3, 4, 5);
+        let test_matrix_b = Matrix::new_constant_value(5, 7, 4);
+
+        let _ = test_matrix_a.add(test_matrix_b);
+    }
+
+    #[test]
+    fn test_matrix_add() {
+        let test_matrix_a = Matrix::new_constant_value(3, 4, 5);
+        let test_matrix_b = Matrix::new_constant_value(3, 4, 4);
+
+        let matrix_sum = test_matrix_a.add(test_matrix_b);
+
+        assert_eq!(matrix_sum.entries.len(), 3);
+
+        assert_eq!(matrix_sum.entries[0], [9, 9, 9, 9]);
+        assert_eq!(matrix_sum.entries[1], [9, 9, 9, 9]);
+        assert_eq!(matrix_sum.entries[2], [9, 9, 9, 9]);
+    }
+
+    #[test]
     fn test_matrix_multiply() {
         let test_matrix_a = Matrix::new_constant_value(3, 4, 5);
         let test_matrix_b = Matrix::new_constant_value(4, 3, 4);
-
-        println!("{} \n{}", test_matrix_a, test_matrix_b);
 
         let matrix_product = matrix_multiply(test_matrix_a, test_matrix_b);
 
