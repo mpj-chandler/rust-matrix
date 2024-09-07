@@ -29,6 +29,10 @@ pub mod matrix_algebra {
 			}
 		}
 
+		pub fn new_all_zeroes(m: usize, n: usize) -> Matrix {
+			Matrix::new_constant_value(m, n, 0)
+		}
+
 		pub fn columns(self) -> Vec<Vec<i32>> {
 			let n = self.n;
 			let m = self.m;
@@ -90,7 +94,7 @@ mod tests {
 	use rand::prelude::*;
 
 	#[test]
-	fn test_initialiser() {
+	fn test_constant_value_initialiser() {
 		let mut rng = rand::thread_rng();
 		let n = rng.gen_range(1..=100);
 		let m = rng.gen_range(1..=100);
@@ -100,6 +104,23 @@ mod tests {
 
     	for row in test_matrix.entries {
     		assert_eq!(row.len(),n);
+    	}
+	}
+
+	#[test]
+	fn test_all_zeroes_initialiser() {
+		let mut rng = rand::thread_rng();
+		let n = rng.gen_range(1..=100);
+		let m = rng.gen_range(1..=100);
+		let test_matrix = Matrix::new_all_zeroes(m, n);
+
+    	assert_eq!(test_matrix.entries.len(), m);
+
+    	for row in test_matrix.entries {
+    		assert_eq!(row.len(),n);
+    		for entry in row {
+    			assert_eq!(entry, 0);
+    		}
     	}
 	}
 
