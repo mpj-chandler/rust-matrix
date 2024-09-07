@@ -9,7 +9,15 @@ pub mod matrix_algebra {
 	}
 
 	impl Matrix {
-		pub fn new(m: usize, n: usize, value: i32) -> Matrix {
+		pub fn new(m: usize, n: usize, entries: Vec<Vec<i32>>) -> Matrix {
+			Matrix {
+				m,
+				n,
+				entries
+			}
+		}
+
+		pub fn new_constant_value(m: usize, n: usize, value: i32) -> Matrix {
 			if m == 0 || n == 0 {
 				panic!("Matrix dimensions must each be greater than zero!");
 			}
@@ -59,7 +67,7 @@ pub mod matrix_algebra {
 			panic!("Matrices are not multiplicatively conformable!");
 		}
 
-		let mut c = Matrix::new(b.entries[0].len(), a.entries.len(), 0);
+		let mut c = Matrix::new_constant_value(b.entries[0].len(), a.entries.len(), 0);
 
 		for (i, a_row) in a.entries.iter().enumerate() {
 			for (k, a_ik) in a_row.iter().enumerate() {
@@ -86,7 +94,7 @@ mod tests {
 		let mut rng = rand::thread_rng();
 		let n = rng.gen_range(1..=100);
 		let m = rng.gen_range(1..=100);
-		let test_matrix = Matrix::new(m, n, 0);
+		let test_matrix = Matrix::new_constant_value(m, n, 0);
 
     	assert_eq!(test_matrix.entries.len(), m);
 
@@ -98,28 +106,28 @@ mod tests {
 	#[test]
 	#[should_panic]
 	fn test_zero_first_argument_to_initialiser() {
-		let _test_matrix = Matrix::new(0, 1, 1);
+		let _test_matrix = Matrix::new_constant_value(0, 1, 1);
 	}
 
 	#[test]
 	#[should_panic]
 	fn test_zero_second_argument_to_initialiser() {
-		let _test_matrix = Matrix::new(1, 0, 1);
+		let _test_matrix = Matrix::new_constant_value(1, 0, 1);
 	}
 
 	#[test]
 	#[should_panic]
 	fn test_panic_on_non_multiplicatively_conformable_matrices() {
-		let test_matrix_a = Matrix::new(3, 4, 5);
-		let test_matrix_b = Matrix::new(5, 7, 4);
+		let test_matrix_a = Matrix::new_constant_value(3, 4, 5);
+		let test_matrix_b = Matrix::new_constant_value(5, 7, 4);
 
 		matrix_multiply(test_matrix_a, test_matrix_b);
 	}
 
 	#[test]
 	fn test_matrix_multiply() {
-		let test_matrix_a = Matrix::new(3, 4, 5);
-		let test_matrix_b = Matrix::new(4, 3, 4);
+		let test_matrix_a = Matrix::new_constant_value(3, 4, 5);
+		let test_matrix_b = Matrix::new_constant_value(4, 3, 4);
 
 		println!("{} \n{}", test_matrix_a, test_matrix_b);
 
