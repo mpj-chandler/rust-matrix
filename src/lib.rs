@@ -82,7 +82,7 @@ mod tests {
 	use rand::prelude::*;
 
 	#[test]
-	fn test_initialiser() {
+	fn test_convenience_initialiser() {
 		let mut rng = rand::thread_rng();
 		let n = rng.gen_range(1..=100);
 		let m = rng.gen_range(1..=100);
