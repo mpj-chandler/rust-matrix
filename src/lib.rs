@@ -24,7 +24,7 @@ pub mod matrix_algebra {
                 entries: vec![row_vec; m],
             }
         }
-
+      
         pub fn new_all_zeroes(m: usize, n: usize) -> Matrix {
             Matrix::new_constant_value(m, n, 0)
         }
@@ -68,6 +68,7 @@ pub mod matrix_algebra {
             panic!("Matrices are not multiplicatively conformable!");
         }
 
+
         let mut c = Matrix::new_constant_value(b.entries[0].len(), a.entries.len(), 0);
 
         for (i, a_row) in a.entries.iter().enumerate() {
@@ -91,11 +92,35 @@ mod tests {
     use rand::prelude::*;
 
     #[test]
+
     fn test_constant_value_initialiser() {
         let mut rng = rand::thread_rng();
         let n = rng.gen_range(1..=100);
         let m = rng.gen_range(1..=100);
         let test_matrix = Matrix::new_constant_value(m, n, 0);
+      
+        assert_eq!(test_matrix.entries.len(), m);
+
+        for row in test_matrix.entries {
+            assert_eq!(row.len(), n);
+        }
+  }
+
+    fn test_initialiser() {
+        let mut rng = rand::thread_rng();
+        let n = rng.gen_range(1..=100);
+        let m = rng.gen_range(1..=100);
+        let mut entries: Vec<Vec<i32>> = vec![];
+
+        for _i in 0..m {
+            let mut row: Vec<i32> = vec![];
+            for _j in 0..n {
+                row.push(rng.gen_range(1..=100));
+            }
+            entries.push(row);
+        }
+
+        let test_matrix = Matrix { m, n, entries };
 
         assert_eq!(test_matrix.entries.len(), m);
 
