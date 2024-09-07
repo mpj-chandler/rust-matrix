@@ -58,22 +58,22 @@ pub mod matrix_algebra {
     }
 
     impl Add for Matrix {
-    	type Output = Self;
+        type Output = Self;
 
-    	fn add(self, other: Self) -> Self {
-    		if !is_additively_conformable(self.clone(), other.clone()) {
-    			panic!("Matrices are not additively conformable!")
-    		}
+        fn add(self, other: Self) -> Self {
+            if !is_additively_conformable(self.clone(), other.clone()) {
+                panic!("Matrices are not additively conformable!")
+            }
 
-    		let mut sum_matrix = Matrix::new_constant_value(self.m, self.n, 0);
+            let mut sum_matrix = Matrix::new_constant_value(self.m, self.n, 0);
 
-    		for i in 0..sum_matrix.entries.len() {
-    			for j in 0..sum_matrix.entries[i].len() {
-    				sum_matrix.entries[i][j] = &self.entries[i][j] + &other.entries[i][j];
-    			}
-    		}
-    		sum_matrix
-    	}
+            for i in 0..sum_matrix.entries.len() {
+                for j in 0..sum_matrix.entries[i].len() {
+                    sum_matrix.entries[i][j] = &self.entries[i][j] + &other.entries[i][j];
+                }
+            }
+            sum_matrix
+        }
     }
 
     fn is_multiplicatively_conformable(a: Matrix, b: Matrix) -> bool {
@@ -83,8 +83,8 @@ pub mod matrix_algebra {
         n == n_prime
     }
 
-    fn is_additively_conformable(a:Matrix, b: Matrix) -> bool {
-    	a.n == b.n && a.m == b.m 
+    fn is_additively_conformable(a: Matrix, b: Matrix) -> bool {
+        a.n == b.n && a.m == b.m
     }
 
     pub fn matrix_multiply(a: Matrix, b: Matrix) -> Matrix {
@@ -110,8 +110,8 @@ pub mod matrix_algebra {
 #[cfg(test)]
 mod tests {
     use crate::matrix_algebra::matrix_multiply;
-    use std::ops::Add;
     use crate::matrix_algebra::Matrix;
+    use std::ops::Add;
 
     use rand::prelude::*;
 
@@ -202,7 +202,7 @@ mod tests {
 
     #[test]
     fn test_matrix_add() {
-    	let test_matrix_a = Matrix::new_constant_value(3, 4, 5);
+        let test_matrix_a = Matrix::new_constant_value(3, 4, 5);
         let test_matrix_b = Matrix::new_constant_value(3, 4, 4);
 
         let matrix_sum = test_matrix_a.add(test_matrix_b);
