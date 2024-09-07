@@ -82,6 +82,30 @@ mod tests {
 	use rand::prelude::*;
 
 	#[test]
+	fn test_initialiser() {
+		let mut rng = rand::thread_rng();
+		let n = rng.gen_range(1..=100);
+		let m = rng.gen_range(1..=100);
+		let mut entries: Vec<Vec<i32>> = vec![];
+
+		for _i in 0..m {
+			let mut row: Vec<i32> = vec![];
+			for _j in 0..n {
+				row.push(rng.gen_range(1..=100));
+			}
+			entries.push(row);
+		}
+
+		let test_matrix = Matrix { m, n, entries };
+
+		assert_eq!(test_matrix.entries.len(), m);
+
+    	for row in test_matrix.entries {
+    		assert_eq!(row.len(),n);
+    	}
+	}
+
+	#[test]
 	fn test_convenience_initialiser() {
 		let mut rng = rand::thread_rng();
 		let n = rng.gen_range(1..=100);
