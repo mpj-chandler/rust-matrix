@@ -6,11 +6,11 @@ pub mod matrix_algebra {
     pub struct Matrix {
         pub n: usize,
         pub m: usize,
-        pub entries: Vec<Vec<i32>>,
+        pub entries: Vec<i32>,
     }
 
     impl Matrix {
-        pub fn new(m: usize, n: usize, entries: Vec<Vec<i32>>) -> Matrix {
+        pub fn new(m: usize, n: usize, entries: Vec<i32>) -> Matrix {
             Matrix { m, n, entries }
         }
 
@@ -18,11 +18,11 @@ pub mod matrix_algebra {
             if m == 0 || n == 0 {
                 panic!("Matrix dimensions must each be greater than zero!");
             }
-            let row_vec = vec![value; n];
+          
             Matrix {
                 n: n,
                 m: m,
-                entries: vec![row_vec; m],
+                entries: vec![value; n * m],
             }
         }
 
@@ -30,15 +30,35 @@ pub mod matrix_algebra {
             Matrix::new_constant_value(m, n, 0)
         }
 
-        pub fn columns(self) -> Vec<Vec<i32>> {
-            let n = self.n;
-            let m = self.m;
+        pub fn get_entry_ij(&self, i: usize, j: usize) -> i32 {
+        	self.entries[(i * self.n) + j]
+        }
 
-            let mut columns = vec![vec![0; m]; n];
-            for row_index in 0..m {
-                for column_index in 0..n {
-                    columns[column_index][row_index] = self.entries[row_index][column_index];
+
+        pub fn set_entry_ij(&mut self, i: usize, j: usize, new_value: i32) {
+        	self.entries[(i * self.n) + j] = new_value;
+        }
+
+        pub fn rows(&self) -> Vec<Vec<i32>> {
+        	// We want to split the vec into m equal parts of length n
+        	let mut rows = Vec::new();
+
+        	for i in (0..(self.m * self.n)).step_by(self.n) {
+        		rows.push(self.entries[i * self.n..(i + 1) * self.n].to_vec());
+        	}
+
+        	rows
+        }
+
+        pub fn columns(&self) -> Vec<Vec<i32>> {
+            let mut columns = Vec::new();
+            
+            for _i in 0..self.n {
+            	let mut new_column: Vec<i32> = Vec::new();
+                for j in (0..(self.n * self.m)).step_by(self.m) {
+                    new_column.push(self.entries[j]);
                 }
+                columns.push(new_column);
             }
 
             columns
@@ -47,7 +67,8 @@ pub mod matrix_algebra {
 
     impl fmt::Display for Matrix {
         fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-            for row in &self.entries {
+        	let rows = self.clone().rows();
+            for row in rows {
                 let printable_row: String =
                     row.iter().map(|&entry| entry.to_string() + ", ").collect();
                 let _ = fmt.write_str(&printable_row)?;
@@ -67,9 +88,9 @@ pub mod matrix_algebra {
 
             let mut sum_matrix = Matrix::new_constant_value(self.m, self.n, 0);
 
-            for i in 0..sum_matrix.entries.len() {
-                for j in 0..sum_matrix.entries[i].len() {
-                    sum_matrix.entries[i][j] = &self.entries[i][j] + &other.entries[i][j];
+            for i in 0..self.m {
+                for j in 0..self.n {
+                    sum_matrix.set_entry_ij(i, j, &self.get_entry_ij(i, j) + &other.get_entry_ij(i, j));
                 }
             }
             sum_matrix
@@ -77,10 +98,7 @@ pub mod matrix_algebra {
     }
 
     fn is_multiplicatively_conformable(a: Matrix, b: Matrix) -> bool {
-        let n = a.entries[0].len();
-        let n_prime = b.entries.len();
-
-        n == n_prime
+        a.n == b.m
     }
 
     fn is_additively_conformable(a: Matrix, b: Matrix) -> bool {
@@ -92,16 +110,20 @@ pub mod matrix_algebra {
             panic!("Matrices are not multiplicatively conformable!");
         }
 
-        let mut c = Matrix::new_constant_value(b.entries[0].len(), a.entries.len(), 0);
+        let mut c = Matrix::new_constant_value(b.n, a.m, 0);
+        let a_rows = a.rows();
+        let b_columns = b.columns();
+        let mut i = 0;
 
-        for (i, a_row) in a.entries.iter().enumerate() {
-            for (k, a_ik) in a_row.iter().enumerate() {
-                for (j, b_kj) in b.entries[k].iter().enumerate() {
-                    println!("C[{}{}] = A[{}{}] * B[{}{}]", i, j, i, k, k, j);
-                    println!("C[{}{}] = {} * {}", i, j, a_ik, b_kj);
-                    c.entries[i][j] = a_ik * b_kj;
+        for a_row in a_rows {
+        	for a_ik in a_row {
+        		let mut j = 0;
+        		for b_kj in &b_columns[i] {
+                    c.set_entry_ij(i, j, a_ik * b_kj);
+                    j += 1;
                 }
             }
+            i += 1;
         }
         c
     }
@@ -120,12 +142,13 @@ mod tests {
         let mut rng = rand::thread_rng();
         let n = rng.gen_range(1..=100);
         let m = rng.gen_range(1..=100);
-        let test_matrix = Matrix::new_constant_value(m, n, 0);
+        let value = rng.gen_range(1..=100);
+        let test_matrix = Matrix::new_constant_value(m, n, value);
 
-        assert_eq!(test_matrix.entries.len(), m);
+        assert_eq!(test_matrix.entries.len(), n * m);
 
-        for row in test_matrix.entries {
-            assert_eq!(row.len(), n);
+        for entry in test_matrix.entries {
+            assert_eq!(entry, value);
         }
     }
 
