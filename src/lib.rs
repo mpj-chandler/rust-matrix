@@ -40,11 +40,10 @@ pub mod matrix_algebra {
         }
 
         pub fn rows(&self) -> Vec<Vec<i32>> {
-        	// We want to split the vec into m equal parts of length n
         	let mut rows = Vec::new();
 
         	for i in (0..(self.m * self.n)).step_by(self.n) {
-        		rows.push(self.entries[i * self.n..(i + 1) * self.n].to_vec());
+        		rows.push(self.entries[i..(i + self.n)].to_vec());
         	}
 
         	rows
@@ -53,12 +52,12 @@ pub mod matrix_algebra {
         pub fn columns(&self) -> Vec<Vec<i32>> {
             let mut columns = Vec::new();
             
-            for _i in 0..self.n {
+            for i in 0..self.n {
             	let mut new_column: Vec<i32> = Vec::new();
-                for j in (0..(self.n * self.m)).step_by(self.m) {
-                    new_column.push(self.entries[j]);
+                for j in 0..self.m {
+                    new_column.push(self.entries[j + i]);
                 }
-                columns.push(new_column);
+                columns.push(new_column.to_vec());
             }
 
             columns
@@ -82,7 +81,7 @@ pub mod matrix_algebra {
         type Output = Self;
 
         fn add(self, other: Self) -> Self {
-            if !is_additively_conformable(self.clone(), other.clone()) {
+            if !is_additively_conformable(&self, &other) {
                 panic!("Matrices are not additively conformable!")
             }
 
@@ -97,35 +96,43 @@ pub mod matrix_algebra {
         }
     }
 
-    fn is_multiplicatively_conformable(a: Matrix, b: Matrix) -> bool {
+    fn is_multiplicatively_conformable(a: &Matrix, b: &Matrix) -> bool {
         a.n == b.m
     }
 
-    fn is_additively_conformable(a: Matrix, b: Matrix) -> bool {
+    fn is_additively_conformable(a: &Matrix, b: &Matrix) -> bool {
         a.n == b.n && a.m == b.m
     }
 
     pub fn matrix_multiply(a: Matrix, b: Matrix) -> Matrix {
-        if !is_multiplicatively_conformable(a.clone(), b.clone()) {
+        if !is_multiplicatively_conformable(&a, &b) {
             panic!("Matrices are not multiplicatively conformable!");
         }
 
-        let mut c = Matrix::new_constant_value(b.n, a.m, 0);
+        let mut entries: Vec<i32> = Vec::new();
         let a_rows = a.rows();
         let b_columns = b.columns();
-        let mut i = 0;
+        let _i = 0;
 
-        for a_row in a_rows {
-        	for a_ik in a_row {
-        		let mut j = 0;
-        		for b_kj in &b_columns[i] {
-                    c.set_entry_ij(i, j, a_ik * b_kj);
-                    j += 1;
-                }
-            }
-            i += 1;
+        for i in 0..a_rows.len() {
+        	for j in 0..b_columns.len() {
+        		if a_rows[i].len() != b_columns[j].len() {
+        			println!("{}, {}", a_rows[i].len(), b_columns[j].len());
+        			panic!("Row / Column length mismatch - cannot calculate matrix product!")
+        		}
+        		let mut new_entry: i32 = 0;
+        		for k in 0..a_rows[i].len() {
+        			new_entry += a_rows[i][k] * b_columns[j][k];
+        		}
+        		entries.push(new_entry);
+        	}
         }
-        c
+        
+        Matrix {
+        	n: a.n,
+        	m: b.m,
+        	entries
+        }
     }
 }
 
@@ -157,23 +164,17 @@ mod tests {
         let mut rng = rand::thread_rng();
         let n = rng.gen_range(1..=100);
         let m = rng.gen_range(1..=100);
-        let mut entries: Vec<Vec<i32>> = vec![];
+        let mut entries: Vec<i32> = Vec::new();
 
         for _i in 0..m {
-            let mut row: Vec<i32> = vec![];
             for _j in 0..n {
-                row.push(rng.gen_range(1..=100));
+                entries.push(rng.gen_range(1..=100));
             }
-            entries.push(row);
         }
 
         let test_matrix = Matrix { m, n, entries };
 
-        assert_eq!(test_matrix.entries.len(), m);
-
-        for row in test_matrix.entries {
-            assert_eq!(row.len(), n);
-        }
+        assert_eq!(test_matrix.entries.len(), n * m);
     }
 
     #[test]
@@ -183,13 +184,10 @@ mod tests {
         let m = rng.gen_range(1..=100);
         let test_matrix = Matrix::new_all_zeroes(m, n);
 
-        assert_eq!(test_matrix.entries.len(), m);
+        assert_eq!(test_matrix.entries.len(), n * m);
 
-        for row in test_matrix.entries {
-            assert_eq!(row.len(), n);
-            for entry in row {
+        for entry in test_matrix.entries {
                 assert_eq!(entry, 0);
-            }
         }
     }
 
@@ -230,11 +228,8 @@ mod tests {
 
         let matrix_sum = test_matrix_a.add(test_matrix_b);
 
-        assert_eq!(matrix_sum.entries.len(), 3);
-
-        assert_eq!(matrix_sum.entries[0], [9, 9, 9, 9]);
-        assert_eq!(matrix_sum.entries[1], [9, 9, 9, 9]);
-        assert_eq!(matrix_sum.entries[2], [9, 9, 9, 9]);
+        assert_eq!(matrix_sum.entries.len(), 12);
+        assert_eq!(matrix_sum.entries, [9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9]);
     }
 
     #[test]
@@ -242,12 +237,11 @@ mod tests {
         let test_matrix_a = Matrix::new_constant_value(3, 4, 5);
         let test_matrix_b = Matrix::new_constant_value(4, 3, 4);
 
+        println!("{} x {}", test_matrix_a, test_matrix_b);
         let matrix_product = matrix_multiply(test_matrix_a, test_matrix_b);
 
-        assert_eq!(matrix_product.entries.len(), 3);
+        assert_eq!(matrix_product.entries.len(), 9);
 
-        assert_eq!(matrix_product.entries[0], [20, 20, 20]);
-        assert_eq!(matrix_product.entries[1], [20, 20, 20]);
-        assert_eq!(matrix_product.entries[2], [20, 20, 20]);
+        assert_eq!(matrix_product.entries, [80, 80, 80, 80, 80, 80, 80, 80, 80]);
     }
 }
