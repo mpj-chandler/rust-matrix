@@ -18,7 +18,7 @@ pub mod matrix_algebra {
             if m == 0 || n == 0 {
                 panic!("Matrix dimensions must each be greater than zero!");
             }
-          
+
             Matrix {
                 n: n,
                 m: m,
@@ -31,29 +31,28 @@ pub mod matrix_algebra {
         }
 
         pub fn get_entry_ij(&self, i: usize, j: usize) -> i32 {
-        	self.entries[(i * self.n) + j]
+            self.entries[(i * self.n) + j]
         }
 
-
         pub fn set_entry_ij(&mut self, i: usize, j: usize, new_value: i32) {
-        	self.entries[(i * self.n) + j] = new_value;
+            self.entries[(i * self.n) + j] = new_value;
         }
 
         pub fn rows(&self) -> Vec<Vec<i32>> {
-        	let mut rows = Vec::new();
+            let mut rows = Vec::new();
 
-        	for i in (0..(self.m * self.n)).step_by(self.n) {
-        		rows.push(self.entries[i..(i + self.n)].to_vec());
-        	}
+            for i in (0..(self.m * self.n)).step_by(self.n) {
+                rows.push(self.entries[i..(i + self.n)].to_vec());
+            }
 
-        	rows
+            rows
         }
 
         pub fn columns(&self) -> Vec<Vec<i32>> {
             let mut columns = Vec::new();
-            
+
             for i in 0..self.n {
-            	let mut new_column: Vec<i32> = Vec::new();
+                let mut new_column: Vec<i32> = Vec::new();
                 for j in 0..self.m {
                     new_column.push(self.entries[j + i]);
                 }
@@ -66,11 +65,26 @@ pub mod matrix_algebra {
 
     impl fmt::Display for Matrix {
         fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        	let rows = self.clone().rows();
-            for row in rows {
+            let rows = self.rows();
+            for (i, row) in rows.clone().into_iter().enumerate() {
                 let printable_row: String =
-                    row.iter().map(|&entry| entry.to_string() + ", ").collect();
+                    row.iter().map(|&entry| entry.to_string() + " ").collect();
+                if i == 0 {
+                    let _ = fmt.write_str("⌜");
+                } else if i == &rows.len() - 1 {
+                    let _ = fmt.write_str("⌞");
+                } else {
+                    let _ = fmt.write_str("⎸");
+                }
+
                 let _ = fmt.write_str(&printable_row)?;
+                if i == 0 {
+                    let _ = fmt.write_str("⌝");
+                } else if i == rows.len() - 1 {
+                    let _ = fmt.write_str("⌟");
+                } else {
+                    let _ = fmt.write_str("⎹");
+                }
                 let _ = fmt.write_str("\n");
             }
             Ok(())
@@ -89,7 +103,11 @@ pub mod matrix_algebra {
 
             for i in 0..self.m {
                 for j in 0..self.n {
-                    sum_matrix.set_entry_ij(i, j, &self.get_entry_ij(i, j) + &other.get_entry_ij(i, j));
+                    sum_matrix.set_entry_ij(
+                        i,
+                        j,
+                        &self.get_entry_ij(i, j) + &other.get_entry_ij(i, j),
+                    );
                 }
             }
             sum_matrix
@@ -115,23 +133,23 @@ pub mod matrix_algebra {
         let _i = 0;
 
         for i in 0..a_rows.len() {
-        	for j in 0..b_columns.len() {
-        		if a_rows[i].len() != b_columns[j].len() {
-        			println!("{}, {}", a_rows[i].len(), b_columns[j].len());
-        			panic!("Row / Column length mismatch - cannot calculate matrix product!")
-        		}
-        		let mut new_entry: i32 = 0;
-        		for k in 0..a_rows[i].len() {
-        			new_entry += a_rows[i][k] * b_columns[j][k];
-        		}
-        		entries.push(new_entry);
-        	}
+            for j in 0..b_columns.len() {
+                if a_rows[i].len() != b_columns[j].len() {
+                    println!("{}, {}", a_rows[i].len(), b_columns[j].len());
+                    panic!("Row / Column length mismatch - cannot calculate matrix product!")
+                }
+                let mut new_entry: i32 = 0;
+                for k in 0..a_rows[i].len() {
+                    new_entry += a_rows[i][k] * b_columns[j][k];
+                }
+                entries.push(new_entry);
+            }
         }
-        
+
         Matrix {
-        	n: a.n,
-        	m: b.m,
-        	entries
+            n: a.n,
+            m: b.m,
+            entries,
         }
     }
 }
@@ -187,7 +205,7 @@ mod tests {
         assert_eq!(test_matrix.entries.len(), n * m);
 
         for entry in test_matrix.entries {
-                assert_eq!(entry, 0);
+            assert_eq!(entry, 0);
         }
     }
 
