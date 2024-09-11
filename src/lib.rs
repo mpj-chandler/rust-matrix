@@ -264,6 +264,20 @@ mod tests {
         assert_eq!(columns[3], vec![4, 8, 12]);
     }
 
+    #[test]
+    fn test_rows() {
+        let test_matrix = Matrix::new(3, 4, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].to_vec());
+
+        let rows = test_matrix.rows();
+
+        assert_eq!(rows.len(), 3);
+
+        assert_eq!(rows[0], vec![1, 2, 3, 4]);
+        assert_eq!(rows[1], vec![5, 6, 7, 8]);
+        assert_eq!(rows[2], vec![9, 10, 11, 12]);
+    }
+
+
 	#[test]
     fn test_matrix_multiply() {
         let test_matrix_a = Matrix::new(3, 4, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].to_vec());
