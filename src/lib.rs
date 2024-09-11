@@ -139,7 +139,7 @@ pub mod matrix_algebra {
                 }
                 let mut new_entry: i32 = 0;
                 for k in 0..a_rows[i].len() {
-      				new_entry += a_rows[i][k] * b_columns[j][k];
+                    new_entry += a_rows[i][k] * b_columns[j][k];
                 }
                 entries.push(new_entry);
             }
@@ -240,17 +240,19 @@ mod tests {
 
     #[test]
     fn test_matrix_add() {
-        let test_matrix_a = Matrix::new_constant_value(3, 4, 5);
-        let test_matrix_b = Matrix::new_constant_value(3, 4, 4);
+        let test_matrix_a = Matrix::new(3, 4, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].to_vec());
+        let test_matrix_b = Matrix::new(3, 4, [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1].to_vec());
 
         let matrix_sum = test_matrix_a.add(test_matrix_b);
 
         assert_eq!(matrix_sum.entries.len(), 12);
-        assert_eq!(matrix_sum.entries, [9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9]);
+        assert_eq!(
+            matrix_sum.entries,
+            [13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13]
+        );
     }
 
-
-	#[test]
+    #[test]
     fn test_columns() {
         let test_matrix = Matrix::new(3, 4, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].to_vec());
 
@@ -277,8 +279,7 @@ mod tests {
         assert_eq!(rows[2], vec![9, 10, 11, 12]);
     }
 
-
-	#[test]
+    #[test]
     fn test_matrix_multiply() {
         let test_matrix_a = Matrix::new(3, 4, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].to_vec());
         let test_matrix_b = Matrix::new(4, 3, [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1].to_vec());
@@ -287,17 +288,20 @@ mod tests {
 
         assert_eq!(matrix_product.entries.len(), 9);
 
-        assert_eq!(matrix_product.entries, [
-        	(1 * 12) + (2 * 9) + (3 * 6) + (4 * 3),
-        	(1 * 11) + (2 * 8) + (3 * 5) + (4 * 2),
-        	(1 * 10) + (2 * 7) + (3 * 4) + (4 * 1), 
-        	(5 * 12) + (6 * 9) + (7 * 6) + (8 * 3),
-        	(5 * 11) + (6 * 8) + (7 * 5) + (8 * 2),
-        	(5 * 10) + (6 * 7) + (7 * 4) + (8 * 1),
-        	(9 * 12) + (10 * 9) + (11 * 6) + (12 * 3),
-        	(9 * 11) + (10 * 8) + (11 * 5) + (12 * 2),
-        	(9 * 10) + (10 * 7) + (11 * 4) + (12 * 1)
-        ]);
+        assert_eq!(
+            matrix_product.entries,
+            [
+                (1 * 12) + (2 * 9) + (3 * 6) + (4 * 3),
+                (1 * 11) + (2 * 8) + (3 * 5) + (4 * 2),
+                (1 * 10) + (2 * 7) + (3 * 4) + (4 * 1),
+                (5 * 12) + (6 * 9) + (7 * 6) + (8 * 3),
+                (5 * 11) + (6 * 8) + (7 * 5) + (8 * 2),
+                (5 * 10) + (6 * 7) + (7 * 4) + (8 * 1),
+                (9 * 12) + (10 * 9) + (11 * 6) + (12 * 3),
+                (9 * 11) + (10 * 8) + (11 * 5) + (12 * 2),
+                (9 * 10) + (10 * 7) + (11 * 4) + (12 * 1)
+            ]
+        );
     }
 
     #[test]
