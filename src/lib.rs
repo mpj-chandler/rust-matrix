@@ -1,6 +1,6 @@
 pub mod matrix_algebra {
     use std::fmt;
-    use std::ops::Add;
+    use std::ops::{Add, Mul};
 
     #[derive(Clone)]
     pub struct Matrix {
@@ -114,6 +114,14 @@ pub mod matrix_algebra {
         }
     }
 
+    impl Mul for Matrix {
+    	type Output = Self;
+
+    	fn mul(self, rhs: Self) -> Self {
+    		matrix_multiply(self, rhs)
+    	}
+    }
+
     fn is_multiplicatively_conformable(a: &Matrix, b: &Matrix) -> bool {
         a.n == b.m
     }
@@ -144,13 +152,8 @@ pub mod matrix_algebra {
                 entries.push(new_entry);
             }
         }
-        println!("Result: {}", mul_matrix);
+        
         mul_matrix
-        // Matrix {
-        //     n: a.n,
-        //     m: b.m,
-        //     entries,
-        // }
     }
 }
 
@@ -254,6 +257,20 @@ mod tests {
     }
 
     #[test]
+    fn test_matrix_add_operator() {
+        let test_matrix_a = Matrix::new(3, 4, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].to_vec());
+        let test_matrix_b = Matrix::new(3, 4, [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1].to_vec());
+
+        let matrix_sum = test_matrix_a + test_matrix_b;
+
+        assert_eq!(matrix_sum.entries.len(), 12);
+        assert_eq!(
+            matrix_sum.entries,
+            [13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13]
+        );
+    }
+
+    #[test]
     fn test_columns() {
         let test_matrix = Matrix::new(3, 4, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].to_vec());
 
@@ -286,6 +303,31 @@ mod tests {
         let test_matrix_b = Matrix::new(4, 3, [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1].to_vec());
 
         let matrix_product = matrix_multiply(test_matrix_a, test_matrix_b);
+
+        assert_eq!(matrix_product.entries.len(), 9);
+
+        assert_eq!(
+            matrix_product.entries,
+            [
+                (1 * 12) + (2 * 9) + (3 * 6) + (4 * 3),
+                (1 * 11) + (2 * 8) + (3 * 5) + (4 * 2),
+                (1 * 10) + (2 * 7) + (3 * 4) + (4 * 1),
+                (5 * 12) + (6 * 9) + (7 * 6) + (8 * 3),
+                (5 * 11) + (6 * 8) + (7 * 5) + (8 * 2),
+                (5 * 10) + (6 * 7) + (7 * 4) + (8 * 1),
+                (9 * 12) + (10 * 9) + (11 * 6) + (12 * 3),
+                (9 * 11) + (10 * 8) + (11 * 5) + (12 * 2),
+                (9 * 10) + (10 * 7) + (11 * 4) + (12 * 1)
+            ]
+        );
+    }
+
+    #[test]
+    fn test_matrix_multiply_operator() {
+        let test_matrix_a = Matrix::new(3, 4, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].to_vec());
+        let test_matrix_b = Matrix::new(4, 3, [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1].to_vec());
+
+        let matrix_product = test_matrix_a * test_matrix_b;
 
         assert_eq!(matrix_product.entries.len(), 9);
 
