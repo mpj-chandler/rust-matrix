@@ -126,30 +126,31 @@ pub mod matrix_algebra {
         if !is_multiplicatively_conformable(&a, &b) {
             panic!("Matrices are not multiplicatively conformable!");
         }
-
         let mut entries: Vec<i32> = Vec::new();
         let a_rows = a.rows();
         let b_columns = b.columns();
-        let _i = 0;
+        let mut mul_matrix = Matrix::new_constant_value(a_rows.len(), b_columns.len(), 0);
 
         for i in 0..a_rows.len() {
             for j in 0..b_columns.len() {
                 if a_rows[i].len() != b_columns[j].len() {
-                    panic!("Row / Column length mismatch - cannot calculate matrix product!")
+                    panic!("Row[{}]: Column[{}] length mismatch - cannot calculate matrix product!", i, j);
                 }
                 let mut new_entry: i32 = 0;
                 for k in 0..a_rows[i].len() {
                     new_entry += a_rows[i][k] * b_columns[j][k];
                 }
+                mul_matrix.set_entry_ij(i, j, new_entry);
                 entries.push(new_entry);
             }
         }
-
-        Matrix {
-            n: a.n,
-            m: b.m,
-            entries,
-        }
+        println!("Result: {}", mul_matrix);
+        mul_matrix
+        // Matrix {
+        //     n: a.n,
+        //     m: b.m,
+        //     entries,
+        // }
     }
 }
 
