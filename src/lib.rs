@@ -68,7 +68,15 @@ pub mod matrix_algebra {
             let rows = self.rows();
             for (i, row) in rows.clone().into_iter().enumerate() {
                 let printable_row: String =
-                    row.iter().map(|&entry| entry.to_string() + " ").collect();
+                    row.iter().map(|&entry| {
+                    	let mut entry_as_string = entry.to_string();
+                    	
+                    	while entry_as_string.len() < 4 {
+                    		entry_as_string += " ";
+                    	}
+
+                    	entry_as_string + " "
+                    }).collect();
                 if i == 0 {
                     let _ = fmt.write_str("⌜");
                 } else if i == &rows.len() - 1 {
