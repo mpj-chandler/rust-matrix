@@ -99,26 +99,30 @@ pub mod matrix_algebra {
         }
     }
 
-    impl Add for Matrix {
-        type Output = Self;
-
-        fn add(self, other: Self) -> Self {
-            if !is_additively_conformable(&self, &other) {
+    pub fn matrix_add(a: &Matrix, b: &Matrix) -> Matrix {
+	if !is_additively_conformable(a, b) {
                 panic!("Matrices are not additively conformable!")
             }
 
-            let mut sum_matrix = Matrix::new_constant_value(self.m, self.n, 0);
+            let mut sum_matrix = Matrix::new_constant_value(a.m, a.n, 0);
 
-            for i in 0..self.m {
-                for j in 0..self.n {
+            for i in 0..a.m {
+                for j in 0..a.n {
                     sum_matrix.set_entry_ij(
                         i,
                         j,
-                        &self.get_entry_ij(i, j) + &other.get_entry_ij(i, j),
+                        a.get_entry_ij(i, j) + b.get_entry_ij(i, j),
                     );
                 }
             }
             sum_matrix
+    }
+
+    impl Add for Matrix {
+        type Output = Self;
+
+        fn add(self, other: Self) -> Self {
+        	matrix_add(&self, &other)
         }
     }
 
@@ -126,7 +130,7 @@ pub mod matrix_algebra {
     	type Output = Self;
 
     	fn mul(self, rhs: Self) -> Self {
-    		matrix_multiply(self, rhs)
+    		matrix_multiply(&self, &rhs)
     	}
     }
 
@@ -138,7 +142,7 @@ pub mod matrix_algebra {
         a.n == b.n && a.m == b.m
     }
 
-    pub fn matrix_multiply(a: Matrix, b: Matrix) -> Matrix {
+    pub fn matrix_multiply(a: &Matrix, b: &Matrix) -> Matrix {
         if !is_multiplicatively_conformable(&a, &b) {
             panic!("Matrices are not multiplicatively conformable!");
         }
@@ -167,7 +171,7 @@ pub mod matrix_algebra {
 
 #[cfg(test)]
 mod tests {
-    use crate::matrix_algebra::matrix_multiply;
+    use crate::matrix_algebra::{matrix_multiply, matrix_add};
     use crate::matrix_algebra::Matrix;
     use std::ops::Add;
 
@@ -238,7 +242,7 @@ mod tests {
         let test_matrix_a = Matrix::new_constant_value(3, 4, 5);
         let test_matrix_b = Matrix::new_constant_value(5, 7, 4);
 
-        matrix_multiply(test_matrix_a, test_matrix_b);
+        matrix_multiply(&test_matrix_a, &test_matrix_b);
     }
 
     #[test]
@@ -255,7 +259,7 @@ mod tests {
         let test_matrix_a = Matrix::new(3, 4, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].to_vec());
         let test_matrix_b = Matrix::new(3, 4, [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1].to_vec());
 
-        let matrix_sum = test_matrix_a.add(test_matrix_b);
+        let matrix_sum = matrix_add(&test_matrix_a, &test_matrix_b);
 
         assert_eq!(matrix_sum.entries.len(), 12);
         assert_eq!(
@@ -310,7 +314,7 @@ mod tests {
         let test_matrix_a = Matrix::new(3, 4, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].to_vec());
         let test_matrix_b = Matrix::new(4, 3, [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1].to_vec());
 
-        let matrix_product = matrix_multiply(test_matrix_a, test_matrix_b);
+        let matrix_product = matrix_multiply(&test_matrix_a, &test_matrix_b);
 
         assert_eq!(matrix_product.entries.len(), 9);
 
@@ -360,7 +364,7 @@ mod tests {
         let test_matrix_a = Matrix::new_constant_value(3, 4, 5);
         let test_matrix_b = Matrix::new_constant_value(4, 3, 4);
 
-        let matrix_product = matrix_multiply(test_matrix_a, test_matrix_b);
+        let matrix_product = matrix_multiply(&test_matrix_a, &test_matrix_b);
 
         assert_eq!(matrix_product.entries.len(), 9);
 
