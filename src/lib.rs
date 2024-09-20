@@ -1,6 +1,6 @@
 pub mod matrix_algebra {
     use std::fmt;
-    use std::ops::{Add, Mul};
+    use std::ops::{Add, AddAssign, Mul};
 
     #[derive(Clone, Debug, PartialEq, Copy)]
     pub enum Entry {
@@ -31,32 +31,69 @@ pub mod matrix_algebra {
         }
     }
 
+    pub fn entry_add(a: &Entry, b: &Entry) -> Entry {
+        match (a, b) {
+            (Entry::Integer32(x), Entry::Integer32(y)) => Entry::Integer32(x + y),
+            (Entry::Float64(x), Entry::Float64(y)) => Entry::Float64(x + y),
+            (Entry::Float64(_), Entry::Integer32(_)) => {
+                let self_as_float = a.to_float64();
+                let other_value_as_float = b.to_float64();
+
+                match (self_as_float, other_value_as_float) {
+                    (Some(x), Some(y)) => Entry::Float64(x + y),
+                    (None, _) => panic!("Unable to parse value!"),
+                    (_, None) => panic!("Unable to parse value!"),
+                }
+            }
+            (Entry::Integer32(_), Entry::Float64(_)) => {
+                let self_as_float = a.to_float64();
+                let other_value_as_float = b.to_float64();
+
+                match (self_as_float, other_value_as_float) {
+                    (Some(x), Some(y)) => Entry::Float64(x + y),
+                    (None, _) => panic!("Unable to parse value!"),
+                    (_, None) => panic!("Unable to parse value!"),
+                }
+            }
+        }
+    }
+
     impl Add for Entry {
         type Output = Self;
 
         fn add(self, other: Self) -> Self {
-            match (self, other) {
-                (Entry::Integer32(_), Entry::Integer32(_)) => self + other,
-                (Entry::Float64(_), Entry::Float64(_)) => self + other,
-                (Entry::Float64(_), Entry::Integer32(_)) => {
-                    let self_as_float = &self.to_float64();
-                    let other_value_as_float = &other.to_float64();
+            entry_add(&self, &other)
+        }
+    }
 
-                    match (self_as_float, other_value_as_float) {
-                        (Some(x), Some(y)) => Entry::Float64(x + y),
-                        (None, _) => panic!("Unable to parse value!"),
-                        (_, None) => panic!("Unable to parse value!"),
-                    }
+    impl AddAssign for Entry {
+        fn add_assign(&mut self, other: Self) {
+            *self = *self + other;
+        }
+    }
+
+    pub fn entry_multiply(a: &Entry, b: &Entry) -> Entry {
+        match (a, b) {
+            (Entry::Integer32(x), Entry::Integer32(y)) => Entry::Integer32(x * y),
+            (Entry::Float64(x), Entry::Float64(y)) => Entry::Float64(x * y),
+            (Entry::Float64(_), Entry::Integer32(_)) => {
+                let self_as_float = a.to_float64();
+                let other_value_as_float = b.to_float64();
+
+                match (self_as_float, other_value_as_float) {
+                    (Some(x), Some(y)) => Entry::Float64(x * y),
+                    (None, _) => panic!("Unable to parse value!"),
+                    (_, None) => panic!("Unable to parse value!"),
                 }
-                (Entry::Integer32(_), Entry::Float64(_)) => {
-                    let self_as_float = &self.to_float64();
-                    let other_value_as_float = &other.to_float64();
+            }
+            (Entry::Integer32(_), Entry::Float64(_)) => {
+                let self_as_float = a.to_float64();
+                let other_value_as_float = b.to_float64();
 
-                    match (self_as_float, other_value_as_float) {
-                        (Some(x), Some(y)) => Entry::Float64(x + y),
-                        (None, _) => panic!("Unable to parse value!"),
-                        (_, None) => panic!("Unable to parse value!"),
-                    }
+                match (self_as_float, other_value_as_float) {
+                    (Some(x), Some(y)) => Entry::Float64(x * y),
+                    (None, _) => panic!("Unable to parse value!"),
+                    (_, None) => panic!("Unable to parse value!"),
                 }
             }
         }
@@ -66,30 +103,7 @@ pub mod matrix_algebra {
         type Output = Self;
 
         fn mul(self, rhs: Self) -> Self {
-            match (self, rhs) {
-                (Entry::Integer32(_), Entry::Integer32(_)) => self * rhs,
-                (Entry::Float64(_), Entry::Float64(_)) => self * rhs,
-                (Entry::Float64(_), Entry::Integer32(_)) => {
-                    let self_as_float = &self.to_float64();
-                    let other_value_as_float = &rhs.to_float64();
-
-                    match (self_as_float, other_value_as_float) {
-                        (Some(x), Some(y)) => Entry::Float64(x * y),
-                        (None, _) => panic!("Unable to parse value!"),
-                        (_, None) => panic!("Unable to parse value!"),
-                    }
-                }
-                (Entry::Integer32(_), Entry::Float64(_)) => {
-                    let self_as_float = &self.to_float64();
-                    let other_value_as_float = &rhs.to_float64();
-
-                    match (self_as_float, other_value_as_float) {
-                        (Some(x), Some(y)) => Entry::Float64(x * y),
-                        (None, _) => panic!("Unable to parse value!"),
-                        (_, None) => panic!("Unable to parse value!"),
-                    }
-                }
-            }
+            entry_multiply(&self, &rhs)
         }
     }
 
@@ -236,7 +250,7 @@ pub mod matrix_algebra {
         if !is_multiplicatively_conformable(&a, &b) {
             panic!("Matrices are not multiplicatively conformable!");
         }
-        let mut entries: Vec<i32> = Vec::new();
+        let mut entries: Vec<Entry> = Vec::new();
         let a_rows = a.rows();
         let b_columns = b.columns();
         let mut mul_matrix =
@@ -250,7 +264,7 @@ pub mod matrix_algebra {
                         i, j
                     );
                 }
-                let mut new_entry = 0;
+                let mut new_entry = Entry::Integer32(0);
                 for k in 0..a_rows[i].len() {
                     new_entry += a_rows[i][k] * b_columns[j][k];
                 }
@@ -282,7 +296,7 @@ mod tests {
         assert_eq!(test_matrix.entries.len(), n * m);
 
         for entry in test_matrix.entries {
-            assert_eq!(entry, value);
+            assert_eq!(entry, Entry::Integer32(value));
         }
     }
 
@@ -346,6 +360,20 @@ mod tests {
         let test_matrix_b = Matrix::new_constant_value(5, 7, Entry::Integer32(4));
 
         let _ = test_matrix_a.add(test_matrix_b);
+    }
+
+    #[test]
+    fn test_entry_add() {
+        let mut rng = rand::thread_rng();
+        let test_value_one = rng.gen_range(1..=100);
+        let test_value_two = rng.gen_range(1..=100);
+
+        let test_entry_one = Entry::Integer32(test_value_one);
+        let test_entry_two = Entry::Integer32(test_value_two);
+
+        let result = test_entry_one + test_entry_two;
+
+        assert_eq!(result, Entry::Integer32(test_value_one + test_value_two));
     }
 
     #[test]
@@ -475,35 +503,159 @@ mod tests {
 
     #[test]
     fn test_columns() {
-        let test_matrix = Matrix::new(3, 4, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].to_vec());
+        let test_matrix = Matrix::new(
+            3,
+            4,
+            [
+                Entry::Integer32(1),
+                Entry::Integer32(2),
+                Entry::Integer32(3),
+                Entry::Integer32(4),
+                Entry::Integer32(5),
+                Entry::Integer32(6),
+                Entry::Integer32(7),
+                Entry::Integer32(8),
+                Entry::Integer32(9),
+                Entry::Integer32(10),
+                Entry::Integer32(11),
+                Entry::Integer32(12),
+            ]
+            .to_vec(),
+        );
 
         let columns = test_matrix.columns();
 
         assert_eq!(columns.len(), 4);
 
-        assert_eq!(columns[0], vec![1, 5, 9]);
-        assert_eq!(columns[1], vec![2, 6, 10]);
-        assert_eq!(columns[2], vec![3, 7, 11]);
-        assert_eq!(columns[3], vec![4, 8, 12]);
+        assert_eq!(
+            columns[0],
+            vec![
+                Entry::Integer32(1),
+                Entry::Integer32(5),
+                Entry::Integer32(9)
+            ]
+        );
+        assert_eq!(
+            columns[1],
+            vec![
+                Entry::Integer32(2),
+                Entry::Integer32(6),
+                Entry::Integer32(10)
+            ]
+        );
+        assert_eq!(
+            columns[2],
+            vec![
+                Entry::Integer32(3),
+                Entry::Integer32(7),
+                Entry::Integer32(11)
+            ]
+        );
+        assert_eq!(
+            columns[3],
+            vec![
+                Entry::Integer32(4),
+                Entry::Integer32(8),
+                Entry::Integer32(12)
+            ]
+        );
     }
 
     #[test]
     fn test_rows() {
-        let test_matrix = Matrix::new(3, 4, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].to_vec());
+        let test_matrix = Matrix::new(
+            3,
+            4,
+            [
+                Entry::Integer32(1),
+                Entry::Integer32(2),
+                Entry::Integer32(3),
+                Entry::Integer32(4),
+                Entry::Integer32(5),
+                Entry::Integer32(6),
+                Entry::Integer32(7),
+                Entry::Integer32(8),
+                Entry::Integer32(9),
+                Entry::Integer32(10),
+                Entry::Integer32(11),
+                Entry::Integer32(12),
+            ]
+            .to_vec(),
+        );
 
         let rows = test_matrix.rows();
 
         assert_eq!(rows.len(), 3);
 
-        assert_eq!(rows[0], vec![1, 2, 3, 4]);
-        assert_eq!(rows[1], vec![5, 6, 7, 8]);
-        assert_eq!(rows[2], vec![9, 10, 11, 12]);
+        assert_eq!(
+            rows[0],
+            vec![
+                Entry::Integer32(1),
+                Entry::Integer32(2),
+                Entry::Integer32(3),
+                Entry::Integer32(4)
+            ]
+        );
+        assert_eq!(
+            rows[1],
+            vec![
+                Entry::Integer32(5),
+                Entry::Integer32(6),
+                Entry::Integer32(7),
+                Entry::Integer32(8)
+            ]
+        );
+        assert_eq!(
+            rows[2],
+            vec![
+                Entry::Integer32(9),
+                Entry::Integer32(10),
+                Entry::Integer32(11),
+                Entry::Integer32(12)
+            ]
+        );
     }
 
     #[test]
     fn test_matrix_multiply() {
-        let test_matrix_a = Matrix::new(3, 4, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].to_vec());
-        let test_matrix_b = Matrix::new(4, 3, [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1].to_vec());
+        let test_matrix_a = Matrix::new(
+            3,
+            4,
+            [
+                Entry::Integer32(1),
+                Entry::Integer32(2),
+                Entry::Integer32(3),
+                Entry::Integer32(4),
+                Entry::Integer32(5),
+                Entry::Integer32(6),
+                Entry::Integer32(7),
+                Entry::Integer32(8),
+                Entry::Integer32(9),
+                Entry::Integer32(10),
+                Entry::Integer32(11),
+                Entry::Integer32(12),
+            ]
+            .to_vec(),
+        );
+        let test_matrix_b = Matrix::new(
+            4,
+            3,
+            [
+                Entry::Integer32(12),
+                Entry::Integer32(11),
+                Entry::Integer32(10),
+                Entry::Integer32(9),
+                Entry::Integer32(8),
+                Entry::Integer32(7),
+                Entry::Integer32(6),
+                Entry::Integer32(5),
+                Entry::Integer32(4),
+                Entry::Integer32(3),
+                Entry::Integer32(2),
+                Entry::Integer32(1),
+            ]
+            .to_vec(),
+        );
 
         let matrix_product = matrix_multiply(&test_matrix_a, &test_matrix_b);
 
@@ -512,23 +664,86 @@ mod tests {
         assert_eq!(
             matrix_product.entries,
             [
-                (1 * 12) + (2 * 9) + (3 * 6) + (4 * 3),
-                (1 * 11) + (2 * 8) + (3 * 5) + (4 * 2),
-                (1 * 10) + (2 * 7) + (3 * 4) + (4 * 1),
-                (5 * 12) + (6 * 9) + (7 * 6) + (8 * 3),
-                (5 * 11) + (6 * 8) + (7 * 5) + (8 * 2),
-                (5 * 10) + (6 * 7) + (7 * 4) + (8 * 1),
-                (9 * 12) + (10 * 9) + (11 * 6) + (12 * 3),
-                (9 * 11) + (10 * 8) + (11 * 5) + (12 * 2),
-                (9 * 10) + (10 * 7) + (11 * 4) + (12 * 1)
+                Entry::Integer32(1 * 12)
+                    + Entry::Integer32(2 * 9)
+                    + Entry::Integer32(3 * 6)
+                    + Entry::Integer32(4 * 3),
+                Entry::Integer32(1 * 11)
+                    + Entry::Integer32(2 * 8)
+                    + Entry::Integer32(3 * 5)
+                    + Entry::Integer32(4 * 2),
+                Entry::Integer32(1 * 10)
+                    + Entry::Integer32(2 * 7)
+                    + Entry::Integer32(3 * 4)
+                    + Entry::Integer32(4 * 1),
+                Entry::Integer32(5 * 12)
+                    + Entry::Integer32(6 * 9)
+                    + Entry::Integer32(7 * 6)
+                    + Entry::Integer32(8 * 3),
+                Entry::Integer32(5 * 11)
+                    + Entry::Integer32(6 * 8)
+                    + Entry::Integer32(7 * 5)
+                    + Entry::Integer32(8 * 2),
+                Entry::Integer32(5 * 10)
+                    + Entry::Integer32(6 * 7)
+                    + Entry::Integer32(7 * 4)
+                    + Entry::Integer32(8 * 1),
+                Entry::Integer32(9 * 12)
+                    + Entry::Integer32(10 * 9)
+                    + Entry::Integer32(11 * 6)
+                    + Entry::Integer32(12 * 3),
+                Entry::Integer32(9 * 11)
+                    + Entry::Integer32(10 * 8)
+                    + Entry::Integer32(11 * 5)
+                    + Entry::Integer32(12 * 2),
+                Entry::Integer32(9 * 10)
+                    + Entry::Integer32(10 * 7)
+                    + Entry::Integer32(11 * 4)
+                    + Entry::Integer32(12 * 1)
             ]
         );
     }
 
     #[test]
     fn test_matrix_multiply_operator() {
-        let test_matrix_a = Matrix::new(3, 4, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].to_vec());
-        let test_matrix_b = Matrix::new(4, 3, [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1].to_vec());
+        let test_matrix_a = Matrix::new(
+            3,
+            4,
+            [
+                Entry::Integer32(1),
+                Entry::Integer32(2),
+                Entry::Integer32(3),
+                Entry::Integer32(4),
+                Entry::Integer32(5),
+                Entry::Integer32(6),
+                Entry::Integer32(7),
+                Entry::Integer32(8),
+                Entry::Integer32(9),
+                Entry::Integer32(10),
+                Entry::Integer32(11),
+                Entry::Integer32(12),
+            ]
+            .to_vec(),
+        );
+        let test_matrix_b = Matrix::new(
+            4,
+            3,
+            [
+                Entry::Integer32(12),
+                Entry::Integer32(11),
+                Entry::Integer32(10),
+                Entry::Integer32(9),
+                Entry::Integer32(8),
+                Entry::Integer32(7),
+                Entry::Integer32(6),
+                Entry::Integer32(5),
+                Entry::Integer32(4),
+                Entry::Integer32(3),
+                Entry::Integer32(2),
+                Entry::Integer32(1),
+            ]
+            .to_vec(),
+        );
 
         let matrix_product = test_matrix_a * test_matrix_b;
 
@@ -537,28 +752,68 @@ mod tests {
         assert_eq!(
             matrix_product.entries,
             [
-                (1 * 12) + (2 * 9) + (3 * 6) + (4 * 3),
-                (1 * 11) + (2 * 8) + (3 * 5) + (4 * 2),
-                (1 * 10) + (2 * 7) + (3 * 4) + (4 * 1),
-                (5 * 12) + (6 * 9) + (7 * 6) + (8 * 3),
-                (5 * 11) + (6 * 8) + (7 * 5) + (8 * 2),
-                (5 * 10) + (6 * 7) + (7 * 4) + (8 * 1),
-                (9 * 12) + (10 * 9) + (11 * 6) + (12 * 3),
-                (9 * 11) + (10 * 8) + (11 * 5) + (12 * 2),
-                (9 * 10) + (10 * 7) + (11 * 4) + (12 * 1)
+                Entry::Integer32(1 * 12)
+                    + Entry::Integer32(2 * 9)
+                    + Entry::Integer32(3 * 6)
+                    + Entry::Integer32(4 * 3),
+                Entry::Integer32(1 * 11)
+                    + Entry::Integer32(2 * 8)
+                    + Entry::Integer32(3 * 5)
+                    + Entry::Integer32(4 * 2),
+                Entry::Integer32(1 * 10)
+                    + Entry::Integer32(2 * 7)
+                    + Entry::Integer32(3 * 4)
+                    + Entry::Integer32(4 * 1),
+                Entry::Integer32(5 * 12)
+                    + Entry::Integer32(6 * 9)
+                    + Entry::Integer32(7 * 6)
+                    + Entry::Integer32(8 * 3),
+                Entry::Integer32(5 * 11)
+                    + Entry::Integer32(6 * 8)
+                    + Entry::Integer32(7 * 5)
+                    + Entry::Integer32(8 * 2),
+                Entry::Integer32(5 * 10)
+                    + Entry::Integer32(6 * 7)
+                    + Entry::Integer32(7 * 4)
+                    + Entry::Integer32(8 * 1),
+                Entry::Integer32(9 * 12)
+                    + Entry::Integer32(10 * 9)
+                    + Entry::Integer32(11 * 6)
+                    + Entry::Integer32(12 * 3),
+                Entry::Integer32(9 * 11)
+                    + Entry::Integer32(10 * 8)
+                    + Entry::Integer32(11 * 5)
+                    + Entry::Integer32(12 * 2),
+                Entry::Integer32(9 * 10)
+                    + Entry::Integer32(10 * 7)
+                    + Entry::Integer32(11 * 4)
+                    + Entry::Integer32(12 * 1)
             ]
         );
     }
 
     #[test]
     fn test_matrix_multiply_constant_value_initialiser() {
-        let test_matrix_a = Matrix::new_constant_value(3, 4, 5);
-        let test_matrix_b = Matrix::new_constant_value(4, 3, 4);
+        let test_matrix_a = Matrix::new_constant_value(3, 4, Entry::Integer32(5));
+        let test_matrix_b = Matrix::new_constant_value(4, 3, Entry::Integer32(4));
 
         let matrix_product = matrix_multiply(&test_matrix_a, &test_matrix_b);
 
         assert_eq!(matrix_product.entries.len(), 9);
 
-        assert_eq!(matrix_product.entries, [80, 80, 80, 80, 80, 80, 80, 80, 80]);
+        assert_eq!(
+            matrix_product.entries,
+            [
+                Entry::Integer32(80),
+                Entry::Integer32(80),
+                Entry::Integer32(80),
+                Entry::Integer32(80),
+                Entry::Integer32(80),
+                Entry::Integer32(80),
+                Entry::Integer32(80),
+                Entry::Integer32(80),
+                Entry::Integer32(80)
+            ]
+        );
     }
 }
