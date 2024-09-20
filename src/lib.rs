@@ -35,26 +35,8 @@ pub mod matrix_algebra {
         match (a, b) {
             (Entry::Integer32(x), Entry::Integer32(y)) => Entry::Integer32(x + y),
             (Entry::Float64(x), Entry::Float64(y)) => Entry::Float64(x + y),
-            (Entry::Float64(_), Entry::Integer32(_)) => {
-                let self_as_float = a.to_float64();
-                let other_value_as_float = b.to_float64();
-
-                match (self_as_float, other_value_as_float) {
-                    (Some(x), Some(y)) => Entry::Float64(x + y),
-                    (None, _) => panic!("Unable to parse value!"),
-                    (_, None) => panic!("Unable to parse value!"),
-                }
-            }
-            (Entry::Integer32(_), Entry::Float64(_)) => {
-                let self_as_float = a.to_float64();
-                let other_value_as_float = b.to_float64();
-
-                match (self_as_float, other_value_as_float) {
-                    (Some(x), Some(y)) => Entry::Float64(x + y),
-                    (None, _) => panic!("Unable to parse value!"),
-                    (_, None) => panic!("Unable to parse value!"),
-                }
-            }
+            (Entry::Float64(x), Entry::Integer32(y)) => Entry::Float64(x * (*y as f64)),
+            (Entry::Integer32(x), Entry::Float64(y)) => Entry::Float64((*x as f64) * y),
         }
     }
 
