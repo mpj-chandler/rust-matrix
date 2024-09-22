@@ -1,4 +1,4 @@
-use matrix::matrix_algebra::{Entry, Matrix};
+use matrix_algebra::{Entry, Matrix};
 
 fn main() {
     let test_matrix = Matrix::new_constant_value(4, 4, Entry::Integer32(5));
