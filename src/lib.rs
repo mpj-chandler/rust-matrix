@@ -1,5 +1,6 @@
 pub mod matrix_algebra {
     use std::fmt;
+    use std::mem::size_of;
     use std::ops::{Add, AddAssign, Mul};
 
     #[derive(Clone, Debug, PartialEq, Copy)]
@@ -8,7 +9,27 @@ pub mod matrix_algebra {
         Float64(f64),
     }
 
+    pub trait EntryFromRaw {
+        fn entry_from_raw(&self) -> Entry;
+    }
+
+    impl EntryFromRaw for i32 {
+        fn entry_from_raw(&self) -> Entry {
+            Entry::Integer32(*self)
+        }
+    }
+
+    impl EntryFromRaw for f64 {
+        fn entry_from_raw(&self) -> Entry {
+            Entry::Float64(*self)
+        }
+    }
+
     impl Entry {
+        fn from_raw(value: &dyn EntryFromRaw) -> Entry {
+            value.entry_from_raw()
+        }
+
         fn to_int32(self) -> Option<i32> {
             match self {
                 Self::Integer32(i) => Some(i),
@@ -93,6 +114,19 @@ pub mod matrix_algebra {
                 m: m,
                 entries: vec![value; n * m],
             }
+        }
+
+        pub fn new_from_raw<T>(m: usize, n: usize, values: Vec<T>) -> Matrix
+        where
+            T: EntryFromRaw,
+        {
+            let mut entries: Vec<Entry> = Vec::with_capacity(n * m * (size_of::<Entry>()));
+
+            for value in values {
+                entries.push(value.entry_from_raw());
+            }
+
+            Matrix { m, n, entries }
         }
 
         pub fn new_all_zeroes(m: usize, n: usize) -> Matrix {
@@ -244,8 +278,9 @@ pub mod matrix_algebra {
 #[cfg(test)]
 mod tests {
     use crate::matrix_algebra::{matrix_add, matrix_multiply};
-    use crate::matrix_algebra::{Entry, Matrix};
-    use std::ops::Add;
+    use crate::matrix_algebra::{Entry, EntryFromRaw, Matrix};
+    use std::mem::size_of;
+    use std::ops::{Add, AddAssign, Mul};
 
     use rand::prelude::*;
 
@@ -278,6 +313,29 @@ mod tests {
         }
 
         let test_matrix = Matrix { m, n, entries };
+
+        assert_eq!(test_matrix.entries.len(), n * m);
+    }
+
+    #[test]
+    fn test_from_raw_initialiser() {
+        let mut rng = rand::thread_rng();
+        let n = rng.gen_range(1..=100);
+        let m = rng.gen_range(1..=100);
+        let mut values: &[dyn EntryFromRaw] =
+            &Vec::with_capacity(n * m * size_of::<f64>()).into_boxed_slice();
+
+        for i in 0..m {
+            for j in 0..n {
+                if j % 2 == 0 {
+                    values.add(rng.gen_range(1..=100) as f64);
+                } else {
+                    values.add(rng.gen_range(1..=100) as i32);
+                }
+            }
+        }
+
+        let test_matrix = Matrix::new_from_raw(m, n, *values.to_vec());
 
         assert_eq!(test_matrix.entries.len(), n * m);
     }
