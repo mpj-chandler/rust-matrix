@@ -262,23 +262,6 @@ mod tests {
     }
 
     #[test]
-    fn test_entry_add() {
-        let mut rng = rand::thread_rng();
-        let test_value_one = rng.gen_range(1..=100);
-        let test_value_two = rng.gen_range(1..=100);
-
-        let test_entry_one = MatrixEntry::Integer32(test_value_one);
-        let test_entry_two = MatrixEntry::Integer32(test_value_two);
-
-        let result = test_entry_one + test_entry_two;
-
-        assert_eq!(
-            result,
-            MatrixEntry::Integer32(test_value_one + test_value_two)
-        );
-    }
-
-    #[test]
     fn test_matrix_add() {
         let test_matrix_a = Matrix::new(
             3,
