@@ -61,10 +61,29 @@ pub mod matrix_algebra {
 
             columns
         }
+
+        pub fn transpose(&self) -> Matrix<T> {
+            let columns = self.columns();
+            let mut transposed_entries = Vec::new();
+
+            for column in columns {
+                for entry in column {
+                    println!("{}", entry);
+                    transposed_entries.push(entry);
+                }
+                println!(".");
+            }
+
+            Matrix::<T> {
+                m: self.n,
+                n: self.m,
+                entries: transposed_entries,
+            }
+        }
     }
 
-    impl<T: Add<Output = T> + AddAssign + Clone + Copy + Display + Mul + ?Sized> fmt::Display
-        for Matrix<T>
+    impl<T: Add<Output = T> + AddAssign + Clone + Copy + Display + Mul<Output = T> + ?Sized>
+        fmt::Display for Matrix<T>
     {
         fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
             let rows = self.rows();
@@ -415,5 +434,16 @@ mod tests {
             matrix_product.entries,
             [80, 80, 80, 80, 80, 80, 80, 80, 80,]
         );
+    }
+
+    #[test]
+    fn test_transpose() {
+        let test_matrix = Matrix::new(2, 3, [1, 2, -1, 0, 3, 7].to_vec());
+
+        let transpose_matrix = test_matrix.transpose();
+
+        assert_eq!(transpose_matrix.m, test_matrix.n);
+        assert_eq!(transpose_matrix.n, test_matrix.m);
+        assert_eq!(transpose_matrix.entries, [1, 0, 2, 3, -1, 7]);
     }
 }
