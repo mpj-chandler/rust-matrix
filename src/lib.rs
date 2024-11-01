@@ -99,6 +99,14 @@ pub mod matrix_algebra {
                 entries: new_entries,
             }
         }
+
+        pub fn partition(
+            &self,
+            row_partitioning: &[usize],
+            column_partitioning: &[usize],
+        ) -> Vec<Matrix<T>> {
+            [self.clone()].to_vec()
+        }
     }
 
     impl<T: Add<Output = T> + AddAssign + Clone + Copy + Display + Mul<Output = T> + ?Sized>
@@ -483,5 +491,22 @@ mod tests {
         assert_eq!(submatrix.n, 2);
         assert_eq!(submatrix.m, 3);
         assert_eq!(submatrix.entries, [2, 4, 12, 14, 22, 24]);
+    }
+
+    #[test]
+    fn test_partition() {
+        let test_matrix = Matrix::new(
+            5,
+            5,
+            [
+                1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
+                24, 25,
+            ]
+            .to_vec(),
+        );
+
+        let submatrices = test_matrix.partition(&[3, 2], &[1, 2, 2]);
+
+        assert_eq!(submatrices.len(), 6);
     }
 }
