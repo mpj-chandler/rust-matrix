@@ -80,6 +80,10 @@ pub mod matrix_algebra {
                 entries: transposed_entries,
             }
         }
+
+        pub fn submatrix(&self, rows: &[usize], columns: &[usize]) -> Matrix<T> {
+            self.clone()
+        }
     }
 
     impl<T: Add<Output = T> + AddAssign + Clone + Copy + Display + Mul<Output = T> + ?Sized>
@@ -445,5 +449,24 @@ mod tests {
         assert_eq!(transpose_matrix.m, test_matrix.n);
         assert_eq!(transpose_matrix.n, test_matrix.m);
         assert_eq!(transpose_matrix.entries, [1, 0, 2, 3, -1, 7]);
+    }
+
+    #[test]
+    fn test_submatrix() {
+        let test_matrix = Matrix::new(
+            5,
+            5,
+            [
+                1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
+                24, 25,
+            ]
+            .to_vec(),
+        );
+
+        let submatrix = test_matrix.submatrix(&[0, 2, 4], &[1, 3]);
+
+        assert_eq!(submatrix.n, 2);
+        assert_eq!(submatrix.m, 3);
+        assert_eq!(submatrix.entries, [2, 4, 12, 14, 22, 24]);
     }
 }
