@@ -3,52 +3,6 @@ pub mod matrix_algebra {
     use std::fmt::Display;
     use std::ops::{Add, AddAssign, Mul};
 
-    #[derive(Clone, Debug, PartialEq, Copy)]
-    pub enum Entry {
-        Integer32(i32),
-        Float64(f64),
-    }
-
-    pub fn entry_add(a: &Entry, b: &Entry) -> Entry {
-        match (a, b) {
-            (Entry::Integer32(x), Entry::Integer32(y)) => Entry::Integer32(x + y),
-            (Entry::Float64(x), Entry::Float64(y)) => Entry::Float64(x + y),
-            (Entry::Float64(x), Entry::Integer32(y)) => Entry::Float64(x * (*y as f64)),
-            (Entry::Integer32(x), Entry::Float64(y)) => Entry::Float64((*x as f64) * y),
-        }
-    }
-
-    impl Add for Entry {
-        type Output = Self;
-
-        fn add(self, other: Self) -> Self {
-            entry_add(&self, &other)
-        }
-    }
-
-    impl AddAssign for Entry {
-        fn add_assign(&mut self, other: Self) {
-            *self = *self + other;
-        }
-    }
-
-    pub fn entry_multiply(a: &Entry, b: &Entry) -> Entry {
-        match (a, b) {
-            (Entry::Integer32(x), Entry::Integer32(y)) => Entry::Integer32(x * y),
-            (Entry::Float64(x), Entry::Float64(y)) => Entry::Float64(x * y),
-            (Entry::Float64(x), Entry::Integer32(y)) => Entry::Float64(x * (*y as f64)),
-            (Entry::Integer32(x), Entry::Float64(y)) => Entry::Float64((*x as f64) * y),
-        }
-    }
-
-    impl Mul for Entry {
-        type Output = Self;
-
-        fn mul(self, rhs: Self) -> Self {
-            entry_multiply(&self, &rhs)
-        }
-    }
-
     #[derive(Clone)]
     pub struct Matrix<T: Add<Output = T> + AddAssign + Clone + Copy + Display + Mul + ?Sized> {
         pub n: usize,
@@ -107,10 +61,29 @@ pub mod matrix_algebra {
 
             columns
         }
+
+        pub fn transpose(&self) -> Matrix<T> {
+            let columns = self.columns();
+            let mut transposed_entries = Vec::new();
+
+            for column in columns {
+                for entry in column {
+                    println!("{}", entry);
+                    transposed_entries.push(entry);
+                }
+                println!(".");
+            }
+
+            Matrix::<T> {
+                m: self.n,
+                n: self.m,
+                entries: transposed_entries,
+            }
+        }
     }
 
-    impl<T: Add<Output = T> + AddAssign + Clone + Copy + Display + Mul + ?Sized> fmt::Display
-        for Matrix<T>
+    impl<T: Add<Output = T> + AddAssign + Clone + Copy + Display + Mul<Output = T> + ?Sized>
+        fmt::Display for Matrix<T>
     {
         fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
             let rows = self.rows();
@@ -262,8 +235,7 @@ pub mod matrix_algebra {
 
 #[cfg(test)]
 mod tests {
-    use crate::matrix_algebra::{matrix_add, matrix_multiply};
-    use crate::matrix_algebra::{Entry, Matrix};
+    use crate::matrix_algebra::{matrix_add, matrix_multiply, Matrix};
 
     use rand::prelude::*;
     use std::ops::Add;
@@ -343,20 +315,6 @@ mod tests {
         let test_matrix_b = Matrix::new_constant_value(5, 7, 4);
 
         let _ = test_matrix_a.add(test_matrix_b);
-    }
-
-    #[test]
-    fn test_entry_add() {
-        let mut rng = rand::thread_rng();
-        let test_value_one = rng.gen_range(1..=100);
-        let test_value_two = rng.gen_range(1..=100);
-
-        let test_entry_one = Entry::Integer32(test_value_one);
-        let test_entry_two = Entry::Integer32(test_value_two);
-
-        let result = test_entry_one + test_entry_two;
-
-        assert_eq!(result, Entry::Integer32(test_value_one + test_value_two));
     }
 
     #[test]
@@ -476,5 +434,16 @@ mod tests {
             matrix_product.entries,
             [80, 80, 80, 80, 80, 80, 80, 80, 80,]
         );
+    }
+
+    #[test]
+    fn test_transpose() {
+        let test_matrix = Matrix::new(2, 3, [1, 2, -1, 0, 3, 7].to_vec());
+
+        let transpose_matrix = test_matrix.transpose();
+
+        assert_eq!(transpose_matrix.m, test_matrix.n);
+        assert_eq!(transpose_matrix.n, test_matrix.m);
+        assert_eq!(transpose_matrix.entries, [1, 0, 2, 3, -1, 7]);
     }
 }
