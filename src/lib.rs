@@ -81,8 +81,23 @@ pub mod matrix_algebra {
             }
         }
 
-        pub fn submatrix(&self, rows: &[usize], columns: &[usize]) -> Matrix<T> {
-            self.clone()
+        pub fn submatrix(&self, row_indices: &[usize], column_indices: &[usize]) -> Matrix<T> {
+            let rows = self.rows();
+            let mut new_entries: Vec<T> = Vec::new();
+
+            for row_index in row_indices {
+                for column_index in column_indices {
+                    let new_entry = &rows[*row_index][*column_index];
+
+                    new_entries.push(*new_entry);
+                }
+            }
+
+            Matrix {
+                n: column_indices.len(),
+                m: row_indices.len(),
+                entries: new_entries,
+            }
         }
     }
 
