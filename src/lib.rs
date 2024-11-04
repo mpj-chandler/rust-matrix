@@ -105,7 +105,30 @@ pub mod matrix_algebra {
             row_partitioning: &[usize],
             column_partitioning: &[usize],
         ) -> Vec<Matrix<T>> {
-            [self.clone()].to_vec()
+            let mut partitioned_matrices: Vec<Matrix<T>> = Vec::new();
+            let mut i_offset = 0;
+            let mut j_offset = 0;
+
+            for row_span in row_partitioning {
+                for j in 0..*row_span {
+                    for column_span in column_partitioning {
+                        let mut new_entries: Vec<T> = Vec::new();
+                        for i in 0..*column_span {
+                            new_entries.push(*self.get_entry_ij(i + i_offset, j + j_offset));
+                        }
+                        partitioned_matrices.push(Matrix {
+                            n: *column_span,
+                            m: *row_span,
+                            entries: new_entries,
+                        });
+                        i_offset += *column_span - 1;
+                    }
+                }
+
+                j_offset += *row_span - 1;
+            }
+
+            partitioned_matrices
         }
     }
 
