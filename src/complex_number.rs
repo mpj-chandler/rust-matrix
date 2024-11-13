@@ -4,6 +4,7 @@ pub mod complex_number {
         ops::{Add, AddAssign, Mul},
     };
 
+    #[derive(PartialEq, Debug)]
     pub struct ComplexNumber<T: Add<Output = T> + AddAssign + Clone + Copy + Display + Mul + ?Sized> {
         real: T,
         complex: T,
@@ -54,15 +55,9 @@ mod tests {
         let real_two = rng.gen_range(1..=100);
         let complex_two = rng.gen_range(1..=100);
 
-        let lhs = ComplexNumber {
-            real: real_one,
-            complex: complex_one,
-        };
-        let rhs = ComplexNumber {
-            real: real_two,
-            complex: complex_two,
-        };
+        let lhs = ComplexNumber::new(real_one, complex_one);
+        let rhs = ComplexNumber::new(real_two, complex_two);
 
-        assert_eq!(lhs + rhs, ComplexNumber { real: real_one + real_two, complex_one + complex_two });
+        assert_eq!(lhs + rhs, ComplexNumber::new(real_one + real_two, complex_one + complex_two));
     }
 }
