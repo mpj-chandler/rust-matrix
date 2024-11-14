@@ -31,7 +31,7 @@ fn main() {
 
     let complex_number = ComplexNumber::new(5, -10);
 
-    println!("{}", complex_number);
+    println!("{}", complex_number * complex_number);
 
     let test_matrix_d = Matrix::new(
         4,
@@ -49,5 +49,21 @@ fn main() {
         .to_vec(),
     );
 
-    println!("{}", test_matrix_d);
+    let test_matrix_e = Matrix::new(
+        2,
+        4,
+        [
+            complex_number,
+            complex_number,
+            complex_number,
+            complex_number,
+            complex_number,
+            complex_number,
+            complex_number,
+            complex_number,
+        ]
+        .to_vec(),
+    );
+
+    println!("{}", test_matrix_d * test_matrix_e);
 }
