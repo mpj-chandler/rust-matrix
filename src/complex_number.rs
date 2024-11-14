@@ -1,15 +1,18 @@
 use std::{
     fmt::{self, Display},
-    ops::{Add, AddAssign, Mul, Sub},
+    ops::{Add, AddAssign, Mul, Neg, Sub},
 };
 
-trait ComplexNumberRequiredTraits<T>: Add<Output = T>
+pub trait ComplexNumberRequiredTraits<T>: Add<Output = T>
 + Sub<Output = T>
 + AddAssign
 + Clone
 + Copy
 + Display
-+ Mul<Output = T> {}
++ Mul<Output = T>
++ PartialOrd<T> 
++ PartialOrd<i32>
++ Neg<Output = T> {}
 
 impl<T: Add<Output = T>
 + Sub<Output = T>
@@ -18,6 +21,9 @@ impl<T: Add<Output = T>
 + Copy
 + Display
 + Mul<Output = T>
++ PartialOrd<T> 
++ PartialOrd<i32>
++ Neg<Output = T>
 + ?Sized,> ComplexNumberRequiredTraits<T> for T {}
 
 #[derive(PartialEq, Debug, PartialOrd, Copy, Clone)]
@@ -36,30 +42,23 @@ pub struct ComplexNumber<
 }
 
 impl<
-        T: Add<Output = T>
-            + Sub<Output = T>
-            + AddAssign
-            + Clone
-            + Copy
-            + Display
-            + Mul<Output = T>
-            + ?Sized,
+        T: ComplexNumberRequiredTraits<T>,
     > ComplexNumber<T>
 {
     pub fn new(real: T, complex: T) -> ComplexNumber<T> {
         ComplexNumber { real, complex }
     }
+
+    pub fn complex_conjugate(&self) -> Self {
+        ComplexNumber {
+            real: self.real,
+            complex: -self.complex,
+        }
+    }
 }
 
 fn complex_number_add<
-    T: Add<Output = T>
-        + Sub<Output = T>
-        + AddAssign
-        + Clone
-        + Copy
-        + Display
-        + Mul<Output = T>
-        + ?Sized,
+    T: ComplexNumberRequiredTraits<T>,
 >(
     lhs: &ComplexNumber<T>,
     rhs: &ComplexNumber<T>,
@@ -71,14 +70,7 @@ fn complex_number_add<
 }
 
 impl<
-        T: Add<Output = T>
-            + Sub<Output = T>
-            + AddAssign
-            + Clone
-            + Copy
-            + Display
-            + Mul<Output = T>
-            + ?Sized,
+        T: ComplexNumberRequiredTraits<T>,
     > Add for ComplexNumber<T>
 {
     type Output = Self;
@@ -89,14 +81,7 @@ impl<
 }
 
 fn complex_number_sub<
-    T: Add<Output = T>
-        + Sub<Output = T>
-        + AddAssign
-        + Clone
-        + Copy
-        + Display
-        + Mul<Output = T>
-        + ?Sized,
+    T: ComplexNumberRequiredTraits<T>,
 >(
     lhs: &ComplexNumber<T>,
     rhs: &ComplexNumber<T>,
@@ -108,14 +93,7 @@ fn complex_number_sub<
 }
 
 impl<
-        T: Add<Output = T>
-            + Sub<Output = T>
-            + AddAssign
-            + Clone
-            + Copy
-            + Display
-            + Mul<Output = T>
-            + ?Sized,
+        T: ComplexNumberRequiredTraits<T>,
     > Sub for ComplexNumber<T>
 {
     type Output = Self;
@@ -126,14 +104,7 @@ impl<
 }
 
 fn complex_number_multiply<
-    T: Add<Output = T>
-        + Sub<Output = T>
-        + AddAssign
-        + Clone
-        + Copy
-        + Display
-        + Mul<Output = T>
-        + ?Sized,
+    T: ComplexNumberRequiredTraits<T>,
 >(
     lhs: &ComplexNumber<T>,
     rhs: &ComplexNumber<T>,
@@ -145,14 +116,7 @@ fn complex_number_multiply<
 }
 
 impl<
-        T: Add<Output = T>
-            + Sub<Output = T>
-            + AddAssign
-            + Clone
-            + Copy
-            + Display
-            + Mul<Output = T>
-            + ?Sized,
+        T: ComplexNumberRequiredTraits<T>,
     > Mul for ComplexNumber<T>
 {
     type Output = Self;
@@ -163,14 +127,7 @@ impl<
 }
 
 fn complex_number_add_assign<
-T: Add<Output = T>
-    + Sub<Output = T>
-    + AddAssign
-    + Clone
-    + Copy
-    + Display
-    + Mul<Output = T>
-    + ?Sized,
+T: ComplexNumberRequiredTraits<T>,
 >(
 lhs: &ComplexNumber<T>,
 rhs: &ComplexNumber<T>,
@@ -179,14 +136,7 @@ rhs: &ComplexNumber<T>,
 }
 
 impl<
-        T: Add<Output = T>
-            + Sub<Output = T>
-            + AddAssign
-            + Clone
-            + Copy
-            + Display
-            + Mul<Output = T>
-            + ?Sized,
+        T: ComplexNumberRequiredTraits<T>,
     > AddAssign for ComplexNumber<T>
 {
     fn add_assign(&mut self, rhs: Self) {
@@ -195,15 +145,7 @@ impl<
 }
 
 fn format_complex_number_component<
-    T: Add<Output = T>
-        + Sub<Output = T>
-        + AddAssign
-        + Clone
-        + Copy
-        + Display
-        + PartialOrd<i32>
-        + Mul<Output = T>
-        + ?Sized,
+    T: ComplexNumberRequiredTraits<T>,
 >(
     input: &T,
     prefix: bool,
@@ -218,15 +160,7 @@ fn format_complex_number_component<
 }
 
 impl<
-        T: Add<Output = T>
-            + Sub<Output = T>
-            + AddAssign
-            + Clone
-            + Copy
-            + Display
-            + PartialOrd<i32>
-            + Mul<Output = T>
-            + ?Sized,
+        T: ComplexNumberRequiredTraits<T>,
     > fmt::Display for ComplexNumber<T>
 {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
@@ -294,6 +228,22 @@ mod tests {
             ComplexNumber::new(
                 (real_one * real_two) - (complex_one * complex_two),
                 (complex_one * real_two) + (complex_two * real_one)
+            )
+        );
+    }
+
+    #[test]
+    fn test_complex_conjugate() {
+        let mut rng = rand::thread_rng();
+        let real = rng.gen_range(1..=100);
+        let complex = rng.gen_range(1..=100);
+        let complex_number = ComplexNumber::new(real, complex);
+
+        assert_eq!(
+            complex_number.complex_conjugate(),
+            ComplexNumber::new(
+                real,
+                -complex,
             )
         );
     }
