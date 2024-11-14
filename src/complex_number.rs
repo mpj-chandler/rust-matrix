@@ -1,26 +1,28 @@
 use std::{
     fmt::{self, Display},
-    ops::{Add, AddAssign, Mul, Neg, Sub},
+    ops::{Add, AddAssign, Div, Mul, Neg, Sub},
 };
 
 pub trait ComplexNumberRequiredTraits<T>: Add<Output = T>
 + Sub<Output = T>
++ Mul<Output = T>
++ Div<Output = T>
 + AddAssign
 + Clone
 + Copy
 + Display
-+ Mul<Output = T>
 + PartialOrd<T> 
 + PartialOrd<i32>
 + Neg<Output = T> {}
 
 impl<T: Add<Output = T>
 + Sub<Output = T>
++ Mul<Output = T>
++ Div<Output = T>
 + AddAssign
 + Clone
 + Copy
 + Display
-+ Mul<Output = T>
 + PartialOrd<T> 
 + PartialOrd<i32>
 + Neg<Output = T>
@@ -123,6 +125,30 @@ impl<
 
     fn mul(self, rhs: Self) -> Self {
         complex_number_multiply::<T>(&self, &rhs)
+    }
+}
+
+fn complex_number_divide<T: ComplexNumberRequiredTraits<T>,
+>(
+    lhs: &ComplexNumber<T>,
+    rhs: &ComplexNumber<T>
+) -> ComplexNumber<T> {
+    let denominator_complex_conjugate = *rhs * rhs.complex_conjugate();
+
+    ComplexNumber {
+        real: lhs.real / denominator_complex_conjugate.real,
+        complex: lhs.complex / denominator_complex_conjugate.real,
+    }
+}
+
+impl <
+T: ComplexNumberRequiredTraits<T>,
+> Div for ComplexNumber<T>
+{
+    type Output = Self;
+
+    fn div(self, rhs: Self) -> Self::Output {
+        complex_number_divide::<T>(&self, &rhs)
     }
 }
 
