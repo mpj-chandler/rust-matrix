@@ -273,4 +273,24 @@ mod tests {
             )
         );
     }
+
+    #[test]
+    fn test_complex_number_divide() {
+        let mut rng = rand::thread_rng();
+        let real_one = rng.gen_range(1..=100);
+        let complex_one = rng.gen_range(1..=100);
+        let real_two = rng.gen_range(1..=100);
+        let complex_two = rng.gen_range(1..=100);
+
+        let lhs = ComplexNumber::new(real_one, complex_one);
+        let rhs = ComplexNumber::new(real_two, complex_two);
+
+        assert_eq!(
+            lhs / rhs,
+            ComplexNumber::new(
+                (real_one * real_two) - (complex_one * complex_two),
+                (complex_one * real_two) + (complex_two * real_one)
+            )
+        );
+    }
 }
