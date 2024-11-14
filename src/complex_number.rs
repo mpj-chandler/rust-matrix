@@ -3,6 +3,23 @@ use std::{
     ops::{Add, AddAssign, Mul, Sub},
 };
 
+trait ComplexNumberRequiredTraits<T>: Add<Output = T>
++ Sub<Output = T>
++ AddAssign
++ Clone
++ Copy
++ Display
++ Mul<Output = T> {}
+
+impl<T: Add<Output = T>
++ Sub<Output = T>
++ AddAssign
++ Clone
++ Copy
++ Display
++ Mul<Output = T>
++ ?Sized,> ComplexNumberRequiredTraits<T> for T {}
+
 #[derive(PartialEq, Debug, PartialOrd, Copy, Clone)]
 pub struct ComplexNumber<
     T: Add<Output = T>
