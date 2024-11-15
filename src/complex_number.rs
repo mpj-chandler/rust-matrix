@@ -3,43 +3,45 @@ use std::{
     ops::{Add, AddAssign, Div, Mul, Neg, Sub},
 };
 
-pub trait ComplexNumberRequiredTraits<T>: Add<Output = T>
-+ Sub<Output = T>
-+ Mul<Output = T>
-+ Div<Output = T>
-+ AddAssign
-+ Clone
-+ Copy
-+ Display
-+ PartialOrd<T> 
-+ Neg<Output = T>
-+ Default {}
+pub trait ComplexNumberRequiredTraits<T>:
+    Add<Output = T>
+    + Sub<Output = T>
+    + Mul<Output = T>
+    + Div<Output = T>
+    + AddAssign
+    + Clone
+    + Copy
+    + Display
+    + PartialOrd<T>
+    + Neg<Output = T>
+    + Default
+{
+}
 
-impl<T: Add<Output = T>
-+ Sub<Output = T>
-+ Mul<Output = T>
-+ Div<Output = T>
-+ AddAssign
-+ Clone
-+ Copy
-+ Display
-+ PartialOrd<T>
-+ Neg<Output = T>
-+ Default
-+ ?Sized,> ComplexNumberRequiredTraits<T> for T {}
+impl<
+        T: Add<Output = T>
+            + Sub<Output = T>
+            + Mul<Output = T>
+            + Div<Output = T>
+            + AddAssign
+            + Clone
+            + Copy
+            + Display
+            + PartialOrd<T>
+            + Neg<Output = T>
+            + Default
+            + ?Sized,
+    > ComplexNumberRequiredTraits<T> for T
+{
+}
 
 #[derive(PartialEq, Debug, PartialOrd, Copy, Clone)]
-pub struct ComplexNumber<
-    T: ComplexNumberRequiredTraits<T>
-> {
+pub struct ComplexNumber<T: ComplexNumberRequiredTraits<T>> {
     real: T,
     complex: T,
 }
 
-impl<
-        T: ComplexNumberRequiredTraits<T>,
-    > ComplexNumber<T>
-{
+impl<T: ComplexNumberRequiredTraits<T>> ComplexNumber<T> {
     pub fn new(real: T, complex: T) -> ComplexNumber<T> {
         ComplexNumber { real, complex }
     }
@@ -52,9 +54,27 @@ impl<
     }
 }
 
-fn complex_number_add<
-    T: ComplexNumberRequiredTraits<T>,
->(
+impl<T: ComplexNumberRequiredTraits<T>> Neg for ComplexNumber<T> {
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        ComplexNumber {
+            real: -self.real,
+            complex: -self.complex,
+        }
+    }
+}
+
+impl<T: ComplexNumberRequiredTraits<T>> Default for ComplexNumber<T> {
+    fn default() -> Self {
+        Self {
+            real: Default::default(),
+            complex: Default::default(),
+        }
+    }
+}
+
+fn complex_number_add<T: ComplexNumberRequiredTraits<T>>(
     lhs: &ComplexNumber<T>,
     rhs: &ComplexNumber<T>,
 ) -> ComplexNumber<T> {
@@ -64,10 +84,7 @@ fn complex_number_add<
     }
 }
 
-impl<
-        T: ComplexNumberRequiredTraits<T>,
-    > Add for ComplexNumber<T>
-{
+impl<T: ComplexNumberRequiredTraits<T>> Add for ComplexNumber<T> {
     type Output = Self;
 
     fn add(self, other: Self) -> Self {
@@ -75,9 +92,7 @@ impl<
     }
 }
 
-fn complex_number_sub<
-    T: ComplexNumberRequiredTraits<T>,
->(
+fn complex_number_sub<T: ComplexNumberRequiredTraits<T>>(
     lhs: &ComplexNumber<T>,
     rhs: &ComplexNumber<T>,
 ) -> ComplexNumber<T> {
@@ -87,10 +102,7 @@ fn complex_number_sub<
     }
 }
 
-impl<
-        T: ComplexNumberRequiredTraits<T>,
-    > Sub for ComplexNumber<T>
-{
+impl<T: ComplexNumberRequiredTraits<T>> Sub for ComplexNumber<T> {
     type Output = Self;
 
     fn sub(self, other: Self) -> Self {
@@ -98,9 +110,7 @@ impl<
     }
 }
 
-fn complex_number_multiply<
-    T: ComplexNumberRequiredTraits<T>,
->(
+fn complex_number_multiply<T: ComplexNumberRequiredTraits<T>>(
     lhs: &ComplexNumber<T>,
     rhs: &ComplexNumber<T>,
 ) -> ComplexNumber<T> {
@@ -110,10 +120,7 @@ fn complex_number_multiply<
     }
 }
 
-impl<
-        T: ComplexNumberRequiredTraits<T>,
-    > Mul for ComplexNumber<T>
-{
+impl<T: ComplexNumberRequiredTraits<T>> Mul for ComplexNumber<T> {
     type Output = Self;
 
     fn mul(self, rhs: Self) -> Self {
@@ -121,17 +128,19 @@ impl<
     }
 }
 
-fn complex_number_divide<T: ComplexNumberRequiredTraits<T>,
->(
+fn complex_number_divide<T: ComplexNumberRequiredTraits<T>>(
     lhs: &ComplexNumber<T>,
-    rhs: &ComplexNumber<T>
+    rhs: &ComplexNumber<T>,
 ) -> ComplexNumber<T> {
     let rhs_complex_conjugate = rhs.complex_conjugate();
     let numerator = *lhs * rhs_complex_conjugate;
     let denominator = *rhs * rhs_complex_conjugate;
 
     if denominator.complex != T::default() {
-        panic!("Something went wrong. Denominator has complex element: {}", denominator);
+        panic!(
+            "Something went wrong. Denominator has complex element: {}",
+            denominator
+        );
     }
 
     ComplexNumber {
@@ -140,10 +149,7 @@ fn complex_number_divide<T: ComplexNumberRequiredTraits<T>,
     }
 }
 
-impl <
-T: ComplexNumberRequiredTraits<T>,
-> Div for ComplexNumber<T>
-{
+impl<T: ComplexNumberRequiredTraits<T>> Div for ComplexNumber<T> {
     type Output = Self;
 
     fn div(self, rhs: Self) -> Self::Output {
@@ -151,27 +157,20 @@ T: ComplexNumberRequiredTraits<T>,
     }
 }
 
-fn complex_number_add_assign<
-T: ComplexNumberRequiredTraits<T>,
->(
-lhs: &ComplexNumber<T>,
-rhs: &ComplexNumber<T>,
+fn complex_number_add_assign<T: ComplexNumberRequiredTraits<T>>(
+    lhs: &ComplexNumber<T>,
+    rhs: &ComplexNumber<T>,
 ) -> ComplexNumber<T> {
     complex_number_add(lhs, rhs)
 }
 
-impl<
-        T: ComplexNumberRequiredTraits<T>,
-    > AddAssign for ComplexNumber<T>
-{
+impl<T: ComplexNumberRequiredTraits<T>> AddAssign for ComplexNumber<T> {
     fn add_assign(&mut self, rhs: Self) {
         *self = complex_number_add_assign::<T>(self, &rhs);
     }
 }
 
-fn format_complex_number_component<
-    T: ComplexNumberRequiredTraits<T>,
->(
+fn format_complex_number_component<T: ComplexNumberRequiredTraits<T>>(
     input: &T,
     complex: bool,
 ) -> String {
@@ -188,10 +187,7 @@ fn format_complex_number_component<
     }
 }
 
-impl<
-        T: ComplexNumberRequiredTraits<T>,
-    > fmt::Display for ComplexNumber<T>
-{
+impl<T: ComplexNumberRequiredTraits<T>> fmt::Display for ComplexNumber<T> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         let display_string = format_complex_number_component(&self.real, false)
             + " "
@@ -269,17 +265,14 @@ mod tests {
 
         assert_eq!(
             complex_number.complex_conjugate(),
-            ComplexNumber::new(
-                real,
-                -complex,
-            )
+            ComplexNumber::new(real, -complex,)
         );
     }
 
     #[test]
     fn test_complex_number_divide() {
         let mut rng = rand::thread_rng();
-        let real_one= rng.gen_range(1.0..=100.0);
+        let real_one = rng.gen_range(1.0..=100.0);
         let complex_one = rng.gen_range(1.0..=100.0);
         let real_two = rng.gen_range(1.0..=100.0);
         let complex_two = rng.gen_range(1.0..=100.0);
@@ -290,8 +283,10 @@ mod tests {
         assert_eq!(
             lhs / rhs,
             ComplexNumber::new(
-                ((real_one * real_two) + (complex_one * complex_two)) / (real_two * real_two + complex_two * complex_two),
-                ((complex_one * real_two) - (complex_two * real_one)) / (real_two * real_two + complex_two * complex_two),
+                ((real_one * real_two) + (complex_one * complex_two))
+                    / (real_two * real_two + complex_two * complex_two),
+                ((complex_one * real_two) - (complex_two * real_one))
+                    / (real_two * real_two + complex_two * complex_two),
             )
         );
     }

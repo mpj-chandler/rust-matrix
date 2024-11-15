@@ -3,19 +3,48 @@ mod complex_number;
 pub mod matrix_algebra {
     use std::fmt;
     use std::fmt::Display;
-    use std::ops::{Add, AddAssign, Mul};
+    use std::ops::{Add, AddAssign, Div, Mul, Neg, Sub};
 
-    #[derive(Clone)]
-    pub struct Matrix<T: Add<Output = T> + AddAssign + Clone + Copy + Display + Mul + ?Sized> {
+    pub trait MatrixElementRequiredTraits<T>:
+        Add<Output = T>
+        + Sub<Output = T>
+        + Mul<Output = T>
+        + Div<Output = T>
+        + AddAssign
+        + Clone
+        + Copy
+        + Display
+        + PartialOrd<T>
+        + Neg<Output = T>
+        + Default
+    {
+    }
+
+    impl<
+            T: Add<Output = T>
+                + Sub<Output = T>
+                + Mul<Output = T>
+                + Div<Output = T>
+                + AddAssign
+                + Clone
+                + Copy
+                + Display
+                + PartialOrd<T>
+                + Neg<Output = T>
+                + Default
+                + ?Sized,
+        > MatrixElementRequiredTraits<T> for T
+    {
+    }
+
+    #[derive(PartialEq, Debug, PartialOrd, Clone)]
+    pub struct Matrix<T: MatrixElementRequiredTraits<T>> {
         pub n: usize,
         pub m: usize,
         pub entries: Vec<T>,
     }
 
-    impl<
-            T: Add<Output = T> + Add<Output = T> + AddAssign + Clone + Copy + Display + Mul + ?Sized,
-        > Matrix<T>
-    {
+    impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         pub fn new(m: usize, n: usize, entries: Vec<T>) -> Matrix<T> {
             Matrix { m, n, entries }
         }
@@ -103,9 +132,7 @@ pub mod matrix_algebra {
         }
     }
 
-    impl<T: Add<Output = T> + AddAssign + Clone + Copy + Display + Mul<Output = T> + ?Sized>
-        fmt::Display for Matrix<T>
-    {
+    impl<T: MatrixElementRequiredTraits<T>> fmt::Display for Matrix<T> {
         fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
             let rows = self.rows();
             for (i, row) in rows.clone().into_iter().enumerate() {
@@ -143,10 +170,7 @@ pub mod matrix_algebra {
         }
     }
 
-    pub fn matrix_add<T: Add<Output = T> + AddAssign + Clone + Copy + Display + Mul + ?Sized>(
-        a: &Matrix<T>,
-        b: &Matrix<T>,
-    ) -> Matrix<T>
+    pub fn matrix_add<T: MatrixElementRequiredTraits<T>>(a: &Matrix<T>, b: &Matrix<T>) -> Matrix<T>
     where
         for<'a> &'a T: Add<Output = T>,
     {
@@ -169,7 +193,7 @@ pub mod matrix_algebra {
         }
     }
 
-    impl<T: Add<Output = T> + AddAssign + Clone + Copy + Display + Mul + ?Sized> Add for Matrix<T>
+    impl<T: MatrixElementRequiredTraits<T>> Add for Matrix<T>
     where
         for<'a> &'a T: Add<Output = T>,
     {
@@ -180,10 +204,7 @@ pub mod matrix_algebra {
         }
     }
 
-    impl<
-            T: Add<Output = T> + Mul<Output = T> + AddAssign + Clone + Copy + Display + Mul + ?Sized,
-        > Mul for Matrix<T>
-    {
+    impl<T: MatrixElementRequiredTraits<T>> Mul for Matrix<T> {
         type Output = Self;
 
         fn mul(self, rhs: Self) -> Self {
@@ -191,27 +212,21 @@ pub mod matrix_algebra {
         }
     }
 
-    fn is_multiplicatively_conformable<
-        T: Add<Output = T> + AddAssign + Clone + Copy + Display + Mul + ?Sized,
-    >(
+    fn is_multiplicatively_conformable<T: MatrixElementRequiredTraits<T>>(
         a: &Matrix<T>,
         b: &Matrix<T>,
     ) -> bool {
         a.n == b.m
     }
 
-    fn is_additively_conformable<
-        T: Add<Output = T> + AddAssign + Clone + Copy + Display + Mul + ?Sized,
-    >(
+    fn is_additively_conformable<T: MatrixElementRequiredTraits<T>>(
         a: &Matrix<T>,
         b: &Matrix<T>,
     ) -> bool {
         a.n == b.n && a.m == b.m
     }
 
-    pub fn matrix_multiply<
-        T: Add<Output = T> + AddAssign + Clone + Copy + Display + Mul<Output = T> + ?Sized,
-    >(
+    pub fn matrix_multiply<T: MatrixElementRequiredTraits<T>>(
         a: &Matrix<T>,
         b: &Matrix<T>,
     ) -> Matrix<T> {
