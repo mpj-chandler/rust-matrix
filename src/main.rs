@@ -29,7 +29,7 @@ fn main() {
 
     println!("{}", c);
 
-    let complex_number = ComplexNumber::new(5, -10);
+    let complex_number = ComplexNumber::new(5.4, -10.0);
 
     println!("{}", complex_number * complex_number);
 
