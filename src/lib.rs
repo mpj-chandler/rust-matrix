@@ -1,3 +1,5 @@
+mod complex_number;
+
 pub mod matrix_algebra {
     use std::fmt;
     use std::fmt::Display;

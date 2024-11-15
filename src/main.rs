@@ -1,3 +1,6 @@
+mod complex_number;
+
+use complex_number::ComplexNumber;
 use matrix::matrix_algebra::Matrix;
 
 fn main() {
@@ -25,4 +28,42 @@ fn main() {
     let c = test_matrix_a * test_matrix_b;
 
     println!("{}", c);
+
+    let complex_number = ComplexNumber::new(5, -10);
+
+    println!("{}", complex_number * complex_number);
+
+    let test_matrix_d = Matrix::new(
+        4,
+        2,
+        [
+            complex_number,
+            complex_number,
+            complex_number,
+            complex_number,
+            complex_number,
+            complex_number,
+            complex_number,
+            complex_number,
+        ]
+        .to_vec(),
+    );
+
+    let test_matrix_e = Matrix::new(
+        2,
+        4,
+        [
+            complex_number,
+            complex_number,
+            complex_number,
+            complex_number,
+            complex_number,
+            complex_number,
+            complex_number,
+            complex_number,
+        ]
+        .to_vec(),
+    );
+
+    println!("{}", test_matrix_d * test_matrix_e);
 }
