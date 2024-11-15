@@ -1,7 +1,4 @@
-mod complex_number;
-
-use complex_number::ComplexNumber;
-use matrix::matrix_algebra::Matrix;
+use matrix::{complex_number::ComplexNumber, matrix_algebra::Matrix};
 
 fn main() {
     let test_matrix = Matrix::new(2, 3, [1, 2, -1, 0, 3, 7].to_vec());
