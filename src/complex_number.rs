@@ -1,4 +1,3 @@
-use core::num;
 use std::{
     fmt::{self, Display},
     ops::{Add, AddAssign, Div, Mul, Neg, Sub},
@@ -13,7 +12,6 @@ pub trait ComplexNumberRequiredTraits<T>: Add<Output = T>
 + Copy
 + Display
 + PartialOrd<T> 
-+ PartialOrd<i32>
 + Neg<Output = T>
 + Default {}
 
@@ -25,22 +23,14 @@ impl<T: Add<Output = T>
 + Clone
 + Copy
 + Display
-+ PartialOrd<T> 
-+ PartialOrd<i32>
++ PartialOrd<T>
 + Neg<Output = T>
 + Default
 + ?Sized,> ComplexNumberRequiredTraits<T> for T {}
 
 #[derive(PartialEq, Debug, PartialOrd, Copy, Clone)]
 pub struct ComplexNumber<
-    T: Add<Output = T>
-        + Sub<Output = T>
-        + AddAssign
-        + Clone
-        + Copy
-        + Display
-        + Mul<Output = T>
-        + ?Sized,
+    T: ComplexNumberRequiredTraits<T>
 > {
     real: T,
     complex: T,
@@ -140,7 +130,7 @@ fn complex_number_divide<T: ComplexNumberRequiredTraits<T>,
     let numerator = *lhs * rhs_complex_conjugate;
     let denominator = *rhs * rhs_complex_conjugate;
 
-    if denominator.complex != 0 {
+    if denominator.complex != T::default() {
         panic!("Something went wrong. Denominator has complex element: {}", denominator);
     }
 
@@ -185,10 +175,10 @@ fn format_complex_number_component<
     input: &T,
     complex: bool,
 ) -> String {
-    if *input == 0 {
+    if *input == T::default() {
         return "".to_owned();
     } else if complex {
-        if *input > 0 {
+        if *input > T::default() {
             return "+".to_owned() + &input.to_string() + "i";
         } else {
             return input.to_string() + "i";
@@ -289,23 +279,19 @@ mod tests {
     #[test]
     fn test_complex_number_divide() {
         let mut rng = rand::thread_rng();
-        let real_one = 2; //rng.gen_range(1..=100);
-        let complex_one = 3; // rng.gen_range(1..=100);
-        let real_two = 4; //rng.gen_range(1..=100);
-        let complex_two = 5; //rng.gen_range(1..=100);
+        let real_one= rng.gen_range(1.0..=100.0);
+        let complex_one = rng.gen_range(1.0..=100.0);
+        let real_two = rng.gen_range(1.0..=100.0);
+        let complex_two = rng.gen_range(1.0..=100.0);
 
         let lhs = ComplexNumber::new(real_one, complex_one);
         let rhs = ComplexNumber::new(real_two, complex_two);
 
-        println!("{lhs} / {rhs}");
-        let result = lhs / rhs;
-        println!("RESULT: {}", result.real);
-
         assert_eq!(
             lhs / rhs,
             ComplexNumber::new(
-                ((real_one * real_two) - (complex_one * complex_two)) / (real_two * real_two + complex_two * complex_two),
-                ((complex_one * real_two) + (complex_two * real_one)) / (real_two * real_two + complex_two * complex_two),
+                ((real_one * real_two) + (complex_one * complex_two)) / (real_two * real_two + complex_two * complex_two),
+                ((complex_one * real_two) - (complex_two * real_one)) / (real_two * real_two + complex_two * complex_two),
             )
         );
     }
