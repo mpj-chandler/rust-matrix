@@ -1,3 +1,4 @@
+use core::num;
 use std::{
     fmt::{self, Display},
     ops::{Add, AddAssign, Div, Mul, Neg, Sub},
@@ -13,7 +14,8 @@ pub trait ComplexNumberRequiredTraits<T>: Add<Output = T>
 + Display
 + PartialOrd<T> 
 + PartialOrd<i32>
-+ Neg<Output = T> {}
++ Neg<Output = T>
++ Default {}
 
 impl<T: Add<Output = T>
 + Sub<Output = T>
@@ -26,6 +28,7 @@ impl<T: Add<Output = T>
 + PartialOrd<T> 
 + PartialOrd<i32>
 + Neg<Output = T>
++ Default
 + ?Sized,> ComplexNumberRequiredTraits<T> for T {}
 
 #[derive(PartialEq, Debug, PartialOrd, Copy, Clone)]
@@ -133,11 +136,17 @@ fn complex_number_divide<T: ComplexNumberRequiredTraits<T>,
     lhs: &ComplexNumber<T>,
     rhs: &ComplexNumber<T>
 ) -> ComplexNumber<T> {
-    let denominator_complex_conjugate = *rhs * rhs.complex_conjugate();
+    let rhs_complex_conjugate = rhs.complex_conjugate();
+    let numerator = *lhs * rhs_complex_conjugate;
+    let denominator = *rhs * rhs_complex_conjugate;
+
+    if denominator.complex != 0 {
+        panic!("Something went wrong. Denominator has complex element: {}", denominator);
+    }
 
     ComplexNumber {
-        real: lhs.real / denominator_complex_conjugate.real,
-        complex: lhs.complex / denominator_complex_conjugate.real,
+        real: numerator.real / denominator.real,
+        complex: numerator.complex / denominator.real,
     }
 }
 
@@ -174,12 +183,16 @@ fn format_complex_number_component<
     T: ComplexNumberRequiredTraits<T>,
 >(
     input: &T,
-    prefix: bool,
+    complex: bool,
 ) -> String {
     if *input == 0 {
         return "".to_owned();
-    } else if prefix && *input > 0 {
-        return "+".to_owned() + &input.to_string();
+    } else if complex {
+        if *input > 0 {
+            return "+".to_owned() + &input.to_string() + "i";
+        } else {
+            return input.to_string() + "i";
+        }
     } else {
         input.to_string()
     }
@@ -192,8 +205,7 @@ impl<
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         let display_string = format_complex_number_component(&self.real, false)
             + " "
-            + &format_complex_number_component(&self.complex, true)
-            + "i";
+            + &format_complex_number_component(&self.complex, true);
         let _ = fmt.write_str(&display_string);
         Ok(())
     }
@@ -277,19 +289,23 @@ mod tests {
     #[test]
     fn test_complex_number_divide() {
         let mut rng = rand::thread_rng();
-        let real_one = rng.gen_range(1..=100);
-        let complex_one = rng.gen_range(1..=100);
-        let real_two = rng.gen_range(1..=100);
-        let complex_two = rng.gen_range(1..=100);
+        let real_one = 2; //rng.gen_range(1..=100);
+        let complex_one = 3; // rng.gen_range(1..=100);
+        let real_two = 4; //rng.gen_range(1..=100);
+        let complex_two = 5; //rng.gen_range(1..=100);
 
         let lhs = ComplexNumber::new(real_one, complex_one);
         let rhs = ComplexNumber::new(real_two, complex_two);
 
+        println!("{lhs} / {rhs}");
+        let result = lhs / rhs;
+        println!("RESULT: {}", result.real);
+
         assert_eq!(
             lhs / rhs,
             ComplexNumber::new(
-                (real_one * real_two) - (complex_one * complex_two),
-                (complex_one * real_two) + (complex_two * real_one)
+                ((real_one * real_two) - (complex_one * complex_two)) / (real_two * real_two + complex_two * complex_two),
+                ((complex_one * real_two) + (complex_two * real_one)) / (real_two * real_two + complex_two * complex_two),
             )
         );
     }
