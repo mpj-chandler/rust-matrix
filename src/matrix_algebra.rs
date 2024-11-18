@@ -14,6 +14,7 @@ pub trait MatrixElementRequiredTraits<T>:
     + PartialOrd<T>
     + Neg<Output = T>
     + Default
+    + From<u8>
 {
 }
 
@@ -29,6 +30,7 @@ impl<
             + PartialOrd<T>
             + Neg<Output = T>
             + Default
+            + From<u8>
             + ?Sized,
     > MatrixElementRequiredTraits<T> for T
 {
@@ -198,19 +200,34 @@ impl<T: MatrixElementRequiredTraits<T>> fmt::Display for Matrix<T> {
     }
 }
 
-pub fn new_all_default<U>(m: usize, n: usize) -> Matrix<U>
+pub fn new_all_default<T>(m: usize, n: usize) -> Matrix<T>
 where
-    U: MatrixElementRequiredTraits<U>,
+    T: MatrixElementRequiredTraits<T>,
 {
     if m == 0 || n == 0 {
         panic!("Matrix dimensions must each be greater than zero!");
     }
 
-    Matrix::<U> {
+    Matrix::<T> {
         n,
         m,
-        entries: vec![U::default(); n * m],
+        entries: vec![T::default(); n * m],
     }
+}
+
+pub fn new_identity_matrix<T>(dimension: usize) -> Matrix<T>
+where
+    T: MatrixElementRequiredTraits<T>,
+{
+    let mut new_empty_matrix = new_all_default::<T>(dimension, dimension);
+
+    for index in 0..dimension {
+        println!("{}", T::from(1));
+        new_empty_matrix.set_entry_ij(index, index, &T::from(1));
+    }
+
+    println!("{new_empty_matrix}");
+    new_empty_matrix
 }
 
 fn matrix_add<T: MatrixElementRequiredTraits<T>>(a: &Matrix<T>, b: &Matrix<T>) -> Matrix<T>
@@ -313,7 +330,7 @@ mod tests {
     use rand::prelude::*;
     use std::ops::Add;
 
-    use super::{new_all_default, Matrix};
+    use super::{new_all_default, new_identity_matrix, Matrix};
 
     #[test]
     fn test_constant_value_initialiser() {
@@ -537,6 +554,17 @@ mod tests {
 
         for entry in test_matrix_i32.entries {
             assert_eq!(entry, i32::default());
+        }
+    }
+
+    #[test]
+    fn test_new_identity_matrix() {
+        let mut rng = rand::thread_rng();
+        let dimension = rng.gen_range(1..=100);
+        let test_matrix_f64 = new_identity_matrix::<f64>(dimension);
+
+        for index in 0..dimension {
+            assert_eq!(*test_matrix_f64.get_entry_ij(index, index), 1.0);
         }
     }
 
