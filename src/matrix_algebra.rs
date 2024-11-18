@@ -59,7 +59,6 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
     }
 
     pub fn get_entry_ij(&self, i: usize, j: usize) -> &T {
-        println!("{i}, {j}");
         &self.entries[(i * self.n) + j]
     }
 
@@ -120,7 +119,7 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
 
         for row_partition in row_partitioning {
             let mut column_offset = 0;
-            println!("ROWS: {}..{}", row_offset, row_offset + *row_partition);
+            println!("ROWS: {}..{}", row_offset, row_offset + *row_partition - 1);
             for column_partition in column_partitioning {
                 println!(
                     "COLUMNS: {}..{}",
@@ -129,15 +128,15 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
                 );
                 let mut new_entries: Vec<T> = Vec::new();
 
-                for i in column_offset..(column_offset + *column_partition) {
-                    for j in 0..(row_offset + *row_partition) {
+                for j in row_offset..(row_offset + *row_partition) {
+                    for i in column_offset..(column_offset + *column_partition) {
                         println!("{}, {}", i, j);
-                        new_entries.push(*self.get_entry_ij(i, j));
+                        new_entries.push(*self.get_entry_ij(j, i));
                     }
                 }
                 partitioned_matrices.push(Matrix {
-                    n: *column_partition,
-                    m: *row_partition,
+                    m: *column_partition,
+                    n: *row_partition,
                     entries: new_entries,
                 });
                 column_offset += *column_partition;
