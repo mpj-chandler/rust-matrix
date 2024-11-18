@@ -222,7 +222,6 @@ where
     let mut new_empty_matrix = new_all_default::<T>(dimension, dimension);
 
     for index in 0..dimension {
-        println!("{}", T::from(1));
         new_empty_matrix.set_entry_ij(index, index, &T::from(1));
     }
 
@@ -561,6 +560,13 @@ mod tests {
     fn test_new_identity_matrix() {
         let mut rng = rand::thread_rng();
         let dimension = rng.gen_range(1..=100);
+
+        let test_matrix_i32 = new_identity_matrix::<i32>(dimension);
+
+        for index in 0..dimension {
+            assert_eq!(*test_matrix_i32.get_entry_ij(index, index), 1);
+        }
+
         let test_matrix_f64 = new_identity_matrix::<f64>(dimension);
 
         for index in 0..dimension {
