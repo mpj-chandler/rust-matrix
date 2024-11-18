@@ -119,19 +119,12 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
 
         for row_partition in row_partitioning {
             let mut column_offset = 0;
-            println!("ROWS: {}..{}", row_offset, row_offset + *row_partition - 1);
             for column_partition in column_partitioning {
-                println!(
-                    "COLUMNS: {}..{}",
-                    column_offset,
-                    column_offset + *column_partition - 1
-                );
                 let mut new_entries: Vec<T> = Vec::new();
 
-                for j in row_offset..(row_offset + *row_partition) {
-                    for i in column_offset..(column_offset + *column_partition) {
-                        println!("{}, {}", i, j);
-                        new_entries.push(*self.get_entry_ij(j, i));
+                for i in row_offset..(row_offset + *row_partition) {
+                    for j in column_offset..(column_offset + *column_partition) {
+                        new_entries.push(*self.get_entry_ij(i, j));
                     }
                 }
                 partitioned_matrices.push(Matrix {
@@ -202,6 +195,21 @@ impl<T: MatrixElementRequiredTraits<T>> fmt::Display for Matrix<T> {
             let _ = fmt.write_str("\n");
         }
         Ok(())
+    }
+}
+
+pub fn new_all_default<U>(m: usize, n: usize) -> Matrix<U>
+where
+    U: MatrixElementRequiredTraits<U>,
+{
+    if m == 0 || n == 0 {
+        panic!("Matrix dimensions must each be greater than zero!");
+    }
+
+    Matrix::<U> {
+        n,
+        m,
+        entries: vec![U::default(); n * m],
     }
 }
 
@@ -305,7 +313,7 @@ mod tests {
     use rand::prelude::*;
     use std::ops::Add;
 
-    use crate::matrix_algebra::Matrix;
+    use super::{new_all_default, Matrix};
 
     #[test]
     fn test_constant_value_initialiser() {
@@ -512,6 +520,56 @@ mod tests {
         assert_eq!(transpose_matrix.m, test_matrix.n);
         assert_eq!(transpose_matrix.n, test_matrix.m);
         assert_eq!(transpose_matrix.entries, [1, 0, 2, 3, -1, 7]);
+    }
+
+    #[test]
+    fn test_new_all_default() {
+        let mut rng = rand::thread_rng();
+        let n = rng.gen_range(1..=100);
+        let m = rng.gen_range(1..=100);
+        let test_matrix_f64 = new_all_default::<f64>(m, n);
+
+        for entry in test_matrix_f64.entries {
+            assert_eq!(entry, f64::default());
+        }
+
+        let test_matrix_i32 = new_all_default::<i32>(m, n);
+
+        for entry in test_matrix_i32.entries {
+            assert_eq!(entry, i32::default());
+        }
+    }
+
+    #[test]
+    fn test_get_entry() {
+        let entries = [
+            1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0,
+            17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0,
+        ]
+        .to_vec();
+        let test_matrix = Matrix::new(5, 5, entries);
+        let mut index = 1.0;
+
+        for i in 0..5 {
+            for j in 0..5 {
+                assert_eq!(*test_matrix.get_entry_ij(i, j), index);
+                index += 1.0;
+            }
+        }
+    }
+
+    #[test]
+    fn test_set_entry() {
+        let mut test_matrix = new_all_default::<f64>(5, 5);
+        let mut index = 1.0;
+
+        for i in 0..5 {
+            for j in 0..5 {
+                test_matrix.set_entry_ij(i, j, &index);
+                assert_eq!(*test_matrix.get_entry_ij(i, j), index);
+                index += 1.0;
+            }
+        }
     }
 
     #[test]
