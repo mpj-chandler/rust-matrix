@@ -59,6 +59,7 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
     }
 
     pub fn get_entry_ij(&self, i: usize, j: usize) -> &T {
+        println!("{i}, {j}");
         &self.entries[(i * self.n) + j]
     }
 
@@ -111,36 +112,43 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
 
     pub fn partition(
         &self,
-        row_partitioning: &[usize],
         column_partitioning: &[usize],
+        row_partitioning: &[usize],
     ) -> Vec<Matrix<T>> {
         let mut partitioned_matrices: Vec<Matrix<T>> = Vec::new();
-        let mut i_offset = 0;
-        let mut j_offset = 0;
+        let mut row_offset = 0;
 
-        for row_span in row_partitioning {
-            for j in 0..*row_span {
-                for column_span in column_partitioning {
-                    let mut new_entries: Vec<T> = Vec::new();
-                    for i in 0..*column_span {
-                        new_entries.push(*self.get_entry_ij(i + i_offset, j + j_offset));
+        for row_partition in row_partitioning {
+            let mut column_offset = 0;
+            println!("ROWS: {}..{}", row_offset, row_offset + *row_partition);
+            for column_partition in column_partitioning {
+                println!(
+                    "COLUMNS: {}..{}",
+                    column_offset,
+                    column_offset + *column_partition - 1
+                );
+                let mut new_entries: Vec<T> = Vec::new();
+
+                for i in column_offset..(column_offset + *column_partition) {
+                    for j in 0..(row_offset + *row_partition) {
+                        println!("{}, {}", i, j);
+                        new_entries.push(*self.get_entry_ij(i, j));
                     }
-                    partitioned_matrices.push(Matrix {
-                        n: *column_span,
-                        m: *row_span,
-                        entries: new_entries,
-                    });
-                    i_offset += *column_span - 1;
                 }
+                partitioned_matrices.push(Matrix {
+                    n: *column_partition,
+                    m: *row_partition,
+                    entries: new_entries,
+                });
+                column_offset += *column_partition;
             }
-
-            j_offset += *row_span - 1;
+            row_offset += *row_partition;
         }
 
         partitioned_matrices
     }
 
-    pub fn submatrix(&self, row_indices: &[usize], column_indices: &[usize]) -> Matrix<T> {
+    pub fn submatrix(&self, column_indices: &[usize], row_indices: &[usize]) -> Matrix<T> {
         let rows = self.rows();
         let mut new_entries: Vec<T> = Vec::new();
 
@@ -508,6 +516,35 @@ mod tests {
     }
 
     #[test]
+    fn test_partition() {
+        let test_matrix = Matrix::new(
+            5,
+            5,
+            [
+                1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0,
+                16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0,
+            ]
+            .to_vec(),
+        );
+
+        let submatrices = test_matrix.partition(&[3, 2], &[2, 3]);
+
+        assert_eq!(
+            submatrices,
+            [
+                Matrix::new(3, 2, [1.0, 2.0, 3.0, 6.0, 7.0, 8.0].to_vec()),
+                Matrix::new(2, 2, [4.0, 5.0, 9.0, 10.0].to_vec()),
+                Matrix::new(
+                    3,
+                    3,
+                    [11.0, 12.0, 13.0, 16.0, 17.0, 18.0, 21.0, 22.0, 23.0].to_vec()
+                ),
+                Matrix::new(2, 3, [14.0, 15.0, 19.0, 20.0, 24.0, 25.0].to_vec())
+            ]
+        )
+    }
+
+    #[test]
     fn test_submatrix() {
         let test_matrix = Matrix::new(
             5,
@@ -519,7 +556,7 @@ mod tests {
             .to_vec(),
         );
 
-        let submatrix = test_matrix.submatrix(&[0, 2, 4], &[1, 3]);
+        let submatrix = test_matrix.submatrix(&[1, 3], &[0, 2, 4]);
 
         assert_eq!(submatrix.n, 2);
         assert_eq!(submatrix.m, 3);
