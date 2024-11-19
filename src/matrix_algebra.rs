@@ -686,13 +686,13 @@ mod tests {
 
     #[test]
     fn test_row_interchange() {
-        let test_matrix = Matrix::new(3, 2, [1.0, 2.0, 3.0, 4.0, 5.0, 6.0].to_vec());
+        let test_matrix = Matrix::new(2, 3, [1.0, 2.0, 3.0, 4.0, 5.0, 6.0].to_vec());
 
         let result = test_matrix.row_interchage(0, 1);
 
         assert_eq!(
             result,
-            Matrix::new(3, 2, [4.0, 5.0, 6.0, 1.0, 2.0, 3.0].to_vec()),
+            Matrix::new(2, 3, [4.0, 5.0, 6.0, 1.0, 2.0, 3.0].to_vec()),
         );
     }
 }
