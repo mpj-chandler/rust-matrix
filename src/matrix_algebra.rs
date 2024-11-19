@@ -78,6 +78,10 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         rows
     }
 
+    pub fn row_interchage(&self, first_row_index: usize, second_row_index: usize) -> Matrix<T> {
+        self.clone()
+    }
+
     pub fn columns(&self) -> Vec<Vec<T>> {
         let mut columns = Vec::new();
 
@@ -652,5 +656,17 @@ mod tests {
         assert_eq!(submatrix.n, 2);
         assert_eq!(submatrix.m, 3);
         assert_eq!(submatrix.entries, [2, 4, 12, 14, 22, 24]);
+    }
+
+    #[test]
+    fn test_row_interchange() {
+        let test_matrix = Matrix::new(3, 2, [1.0, 2.0, 3.0, 4.0, 5.0, 6.0].to_vec());
+
+        let result = test_matrix.row_interchage(1, 2);
+
+        assert_eq!(
+            result,
+            Matrix::new(3, 2, [4.0, 5.0, 6.0, 1.0, 2.0, 3.0].to_vec()),
+        );
     }
 }
