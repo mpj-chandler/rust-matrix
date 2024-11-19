@@ -109,7 +109,28 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
     }
 
     pub fn multiply_row_by_scalar(&self, row_index: usize, scalar: T) -> Matrix<T> {
-        self.clone()
+        let rows = self.rows();
+        let row_to_be_multiplied = &rows[row_index];
+
+        let mut new_entries: Vec<T> = Vec::new();
+
+        for i in 0..rows.len() {
+            if i == row_index {
+                for entry in row_to_be_multiplied {
+                    new_entries.push(*entry * scalar);
+                }
+            } else {
+                for entry in rows[i].clone() {
+                    new_entries.push(entry);
+                }
+            }
+        }
+
+        Matrix {
+            m: self.m,
+            n: self.n,
+            entries: new_entries,
+        }
     }
 
     pub fn columns(&self) -> Vec<Vec<T>> {
