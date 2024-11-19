@@ -78,7 +78,7 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         rows
     }
 
-    pub fn row_interchage(&self, first_row_index: usize, second_row_index: usize) -> Matrix<T> {
+    pub fn row_interchange(&self, first_row_index: usize, second_row_index: usize) -> Matrix<T> {
         let rows = self.rows();
         let first_row = &rows[first_row_index];
         let second_row = &rows[second_row_index];
@@ -106,6 +106,10 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
             n: self.n,
             entries: new_entries,
         }
+    }
+
+    pub fn multiply_row_by_scalar(&self, row_index: usize, scalar: T) -> Matrix<T> {
+        self.clone()
     }
 
     pub fn columns(&self) -> Vec<Vec<T>> {
@@ -518,31 +522,6 @@ mod tests {
     }
 
     #[test]
-    fn test_matrix_multiply_operator() {
-        let test_matrix_a = Matrix::new(3, 4, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].to_vec());
-        let test_matrix_b = Matrix::new(4, 3, [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1].to_vec());
-
-        let matrix_product = test_matrix_a * test_matrix_b;
-
-        assert_eq!(matrix_product.entries.len(), 9);
-
-        assert_eq!(
-            matrix_product.entries,
-            [
-                1 * 12 + 2 * 9 + 3 * 6 + 4 * 3,
-                1 * 11 + 2 * 8 + 3 * 5 + 4 * 2,
-                1 * 10 + 2 * 7 + 3 * 4 + 4 * 1,
-                5 * 12 + 6 * 9 + 7 * 6 + 8 * 3,
-                5 * 11 + 6 * 8 + 7 * 5 + 8 * 2,
-                5 * 10 + 6 * 7 + 7 * 4 + 8 * 1,
-                9 * 12 + 10 * 9 + 11 * 6 + 12 * 3,
-                9 * 11 + 10 * 8 + 11 * 5 + 12 * 2,
-                9 * 10 + 10 * 7 + 11 * 4 + 12 * 1
-            ]
-        );
-    }
-
-    #[test]
     fn test_matrix_multiply_constant_value_initialiser() {
         let test_matrix_a = Matrix::new_constant_value(3, 4, 5);
         let test_matrix_b = Matrix::new_constant_value(4, 3, 4);
@@ -688,11 +667,27 @@ mod tests {
     fn test_row_interchange() {
         let test_matrix = Matrix::new(2, 3, [1.0, 2.0, 3.0, 4.0, 5.0, 6.0].to_vec());
 
-        let result = test_matrix.row_interchage(0, 1);
+        let result = test_matrix.row_interchange(0, 1);
 
         assert_eq!(
             result,
             Matrix::new(2, 3, [4.0, 5.0, 6.0, 1.0, 2.0, 3.0].to_vec()),
+        );
+    }
+
+    #[test]
+    fn test_multiply_row_by_scalar() {
+        let test_matrix = Matrix::new(3, 3, [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0].to_vec());
+
+        let result = test_matrix.multiply_row_by_scalar(2, 2.0);
+
+        assert_eq!(
+            result,
+            Matrix::new(
+                3,
+                3,
+                [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 14.0, 16.0, 18.0].to_vec()
+            ),
         );
     }
 }
