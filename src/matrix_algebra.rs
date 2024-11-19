@@ -71,8 +71,8 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
     pub fn rows(&self) -> Vec<Vec<T>> {
         let mut rows = Vec::new();
 
-        for i in (0..(self.m * self.n)).step_by(self.n) {
-            rows.push(self.entries[i..(i + self.n)].to_vec());
+        for i in (0..(self.m * self.n)).step_by(self.m) {
+            rows.push(self.entries[i..(i + self.m)].to_vec());
         }
 
         rows
@@ -451,7 +451,7 @@ mod tests {
 
     #[test]
     fn test_rows() {
-        let test_matrix = Matrix::new(3, 4, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].to_vec());
+        let test_matrix = Matrix::new(4, 3, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].to_vec());
 
         let rows = test_matrix.rows();
 
