@@ -21,10 +21,9 @@ fn main() {
         ]
         .to_vec(),
     );
+    println!("{}", test_matrix_a);
 
     let c = test_matrix_a * test_matrix_b;
-
-    println!("{}", c);
 
     let complex_number = ComplexNumber::new(5.4, -10.0);
 
