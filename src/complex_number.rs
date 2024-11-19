@@ -15,6 +15,7 @@ pub trait ComplexNumberRequiredTraits<T>:
     + PartialOrd<T>
     + Neg<Output = T>
     + Default
+    + From<u8>
 {
 }
 
@@ -30,6 +31,7 @@ impl<
             + PartialOrd<T>
             + Neg<Output = T>
             + Default
+            + From<u8>
             + ?Sized,
     > ComplexNumberRequiredTraits<T> for T
 {
@@ -89,6 +91,15 @@ impl<T: ComplexNumberRequiredTraits<T>> Add for ComplexNumber<T> {
 
     fn add(self, other: Self) -> Self {
         complex_number_add(&self, &other)
+    }
+}
+
+impl<T: ComplexNumberRequiredTraits<T>> From<u8> for ComplexNumber<T> {
+    fn from(value: u8) -> Self {
+        ComplexNumber {
+            real: T::from(value),
+            complex: T::from(0),
+        }
     }
 }
 

@@ -14,6 +14,7 @@ pub trait MatrixElementRequiredTraits<T>:
     + PartialOrd<T>
     + Neg<Output = T>
     + Default
+    + From<u8>
 {
 }
 
@@ -29,6 +30,7 @@ impl<
             + PartialOrd<T>
             + Neg<Output = T>
             + Default
+            + From<u8>
             + ?Sized,
     > MatrixElementRequiredTraits<T> for T
 {
@@ -109,7 +111,38 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         }
     }
 
-    pub fn submatrix(&self, row_indices: &[usize], column_indices: &[usize]) -> Matrix<T> {
+    pub fn partition(
+        &self,
+        column_partitioning: &[usize],
+        row_partitioning: &[usize],
+    ) -> Vec<Matrix<T>> {
+        let mut partitioned_matrices: Vec<Matrix<T>> = Vec::new();
+        let mut row_offset = 0;
+
+        for row_partition in row_partitioning {
+            let mut column_offset = 0;
+            for column_partition in column_partitioning {
+                let mut new_entries: Vec<T> = Vec::new();
+
+                for i in row_offset..(row_offset + *row_partition) {
+                    for j in column_offset..(column_offset + *column_partition) {
+                        new_entries.push(*self.get_entry_ij(i, j));
+                    }
+                }
+                partitioned_matrices.push(Matrix {
+                    m: *column_partition,
+                    n: *row_partition,
+                    entries: new_entries,
+                });
+                column_offset += *column_partition;
+            }
+            row_offset += *row_partition;
+        }
+
+        partitioned_matrices
+    }
+
+    pub fn submatrix(&self, column_indices: &[usize], row_indices: &[usize]) -> Matrix<T> {
         let rows = self.rows();
         let mut new_entries: Vec<T> = Vec::new();
 
@@ -165,6 +198,35 @@ impl<T: MatrixElementRequiredTraits<T>> fmt::Display for Matrix<T> {
         }
         Ok(())
     }
+}
+
+pub fn new_all_default<T>(m: usize, n: usize) -> Matrix<T>
+where
+    T: MatrixElementRequiredTraits<T>,
+{
+    if m == 0 || n == 0 {
+        panic!("Matrix dimensions must each be greater than zero!");
+    }
+
+    Matrix::<T> {
+        n,
+        m,
+        entries: vec![T::default(); n * m],
+    }
+}
+
+pub fn new_identity_matrix<T>(dimension: usize) -> Matrix<T>
+where
+    T: MatrixElementRequiredTraits<T>,
+{
+    let mut new_empty_matrix = new_all_default::<T>(dimension, dimension);
+
+    for index in 0..dimension {
+        new_empty_matrix.set_entry_ij(index, index, &T::from(1));
+    }
+
+    println!("{new_empty_matrix}");
+    new_empty_matrix
 }
 
 fn matrix_add<T: MatrixElementRequiredTraits<T>>(a: &Matrix<T>, b: &Matrix<T>) -> Matrix<T>
@@ -267,7 +329,7 @@ mod tests {
     use rand::prelude::*;
     use std::ops::Add;
 
-    use crate::matrix_algebra::Matrix;
+    use super::{new_all_default, new_identity_matrix, Matrix};
 
     #[test]
     fn test_constant_value_initialiser() {
@@ -477,6 +539,103 @@ mod tests {
     }
 
     #[test]
+    fn test_new_all_default() {
+        let mut rng = rand::thread_rng();
+        let n = rng.gen_range(1..=100);
+        let m = rng.gen_range(1..=100);
+        let test_matrix_f64 = new_all_default::<f64>(m, n);
+
+        for entry in test_matrix_f64.entries {
+            assert_eq!(entry, f64::default());
+        }
+
+        let test_matrix_i32 = new_all_default::<i32>(m, n);
+
+        for entry in test_matrix_i32.entries {
+            assert_eq!(entry, i32::default());
+        }
+    }
+
+    #[test]
+    fn test_new_identity_matrix() {
+        let mut rng = rand::thread_rng();
+        let dimension = rng.gen_range(1..=100);
+
+        let test_matrix_i32 = new_identity_matrix::<i32>(dimension);
+
+        for index in 0..dimension {
+            assert_eq!(*test_matrix_i32.get_entry_ij(index, index), 1);
+        }
+
+        let test_matrix_f64 = new_identity_matrix::<f64>(dimension);
+
+        for index in 0..dimension {
+            assert_eq!(*test_matrix_f64.get_entry_ij(index, index), 1.0);
+        }
+    }
+
+    #[test]
+    fn test_get_entry() {
+        let entries = [
+            1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0,
+            17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0,
+        ]
+        .to_vec();
+        let test_matrix = Matrix::new(5, 5, entries);
+        let mut index = 1.0;
+
+        for i in 0..5 {
+            for j in 0..5 {
+                assert_eq!(*test_matrix.get_entry_ij(i, j), index);
+                index += 1.0;
+            }
+        }
+    }
+
+    #[test]
+    fn test_set_entry() {
+        let mut test_matrix = new_all_default::<f64>(5, 5);
+        let mut index = 1.0;
+
+        for i in 0..5 {
+            for j in 0..5 {
+                test_matrix.set_entry_ij(i, j, &index);
+                assert_eq!(*test_matrix.get_entry_ij(i, j), index);
+                index += 1.0;
+            }
+        }
+    }
+
+    #[test]
+    fn test_partition() {
+        let test_matrix = Matrix::new(
+            5,
+            5,
+            [
+                1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0,
+                16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0,
+            ]
+            .to_vec(),
+        );
+
+        let submatrices = test_matrix.partition(&[3, 2], &[2, 3]);
+
+        assert_eq!(
+            submatrices,
+            [
+                Matrix::new(3, 2, [1.0, 2.0, 3.0, 6.0, 7.0, 8.0].to_vec()),
+                Matrix::new(2, 2, [4.0, 5.0, 9.0, 10.0].to_vec()),
+                Matrix::new(
+                    3,
+                    3,
+                    [11.0, 12.0, 13.0, 16.0, 17.0, 18.0, 21.0, 22.0, 23.0].to_vec()
+                ),
+                Matrix::new(2, 3, [14.0, 15.0, 19.0, 20.0, 24.0, 25.0].to_vec())
+            ]
+        )
+    }
+
+    #[test]
     fn test_submatrix() {
         let test_matrix = Matrix::new(
             5,
@@ -488,7 +647,7 @@ mod tests {
             .to_vec(),
         );
 
-        let submatrix = test_matrix.submatrix(&[0, 2, 4], &[1, 3]);
+        let submatrix = test_matrix.submatrix(&[1, 3], &[0, 2, 4]);
 
         assert_eq!(submatrix.n, 2);
         assert_eq!(submatrix.m, 3);
