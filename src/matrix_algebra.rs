@@ -133,6 +133,15 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         }
     }
 
+    pub fn add_row_to_scalar_multiple_of_row(
+        &self,
+        target_index: usize,
+        source_index: usize,
+        scalar: T,
+    ) -> Matrix<T> {
+        self.clone()
+    }
+
     pub fn columns(&self) -> Vec<Vec<T>> {
         let mut columns = Vec::new();
 
@@ -708,6 +717,22 @@ mod tests {
                 3,
                 3,
                 [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 14.0, 16.0, 18.0].to_vec()
+            ),
+        );
+    }
+
+    #[test]
+    fn test_add_row_to_scalar_multiple_of_row() {
+        let test_matrix = Matrix::new(3, 3, [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0].to_vec());
+
+        let result = test_matrix.add_row_to_scalar_multiple_of_row(0, 2, 5.0);
+
+        assert_eq!(
+            result,
+            Matrix::new(
+                3,
+                3,
+                [36.0, 42.0, 48.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0].to_vec()
             ),
         );
     }
