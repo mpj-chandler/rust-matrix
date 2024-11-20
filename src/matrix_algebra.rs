@@ -169,6 +169,10 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         }
     }
 
+    pub fn row_echolon_form(&self) -> Matrix<T> {
+        self.clone()
+    }
+
     pub fn columns(&self) -> Vec<Vec<T>> {
         let mut columns = Vec::new();
 
@@ -189,10 +193,8 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
 
         for column in columns {
             for entry in column {
-                println!("{}", entry);
                 transposed_entries.push(entry);
             }
-            println!(".");
         }
 
         Matrix::<T> {
@@ -760,6 +762,43 @@ mod tests {
                 3,
                 3,
                 [36.0, 42.0, 48.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0].to_vec()
+            ),
+        );
+    }
+
+    #[test]
+    fn test_row_echolon_form() {
+        let test_matrix = Matrix::new(
+            3,
+            4,
+            [
+                0.0, 0.0, 3.0, -1.0, 0.0, -1.0, 4.0, 7.0, 0.0, -1.0, 7.0, 6.0,
+            ]
+            .to_vec(),
+        );
+
+        let result = test_matrix.row_echolon_form();
+
+        assert_eq!(
+            result,
+            Matrix::new(
+                3,
+                4,
+                [
+                    0.0,
+                    1.0,
+                    0.0,
+                    -25.0 / 3.0,
+                    0.0,
+                    0.0,
+                    1.0,
+                    -1.0 / 3.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                ]
+                .to_vec()
             ),
         );
     }
