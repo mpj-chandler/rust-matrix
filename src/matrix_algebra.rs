@@ -139,7 +139,34 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         source_index: usize,
         scalar: T,
     ) -> Matrix<T> {
-        self.clone()
+        let rows = self.rows();
+        let row_to_be_added_to = rows[target_index].clone();
+        let row_to_be_added: Vec<T> = rows[source_index]
+            .clone()
+            .into_iter()
+            .map(|entry| -> T { scalar * entry })
+            .collect();
+
+        let mut new_entries: Vec<T> = Vec::new();
+
+        for i in 0..rows.len() {
+            if i == target_index {
+                let new_row = row_to_be_added.iter().zip(row_to_be_added_to.iter());
+                for (_, (lhs, rhs)) in new_row.enumerate() {
+                    new_entries.push(*lhs + *rhs);
+                }
+            } else {
+                for entry in rows[i].clone() {
+                    new_entries.push(entry);
+                }
+            }
+        }
+
+        Matrix {
+            m: self.m,
+            n: self.n,
+            entries: new_entries,
+        }
     }
 
     pub fn columns(&self) -> Vec<Vec<T>> {
