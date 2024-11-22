@@ -181,18 +181,6 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         true
     }
 
-    fn index_of_first_non_zero_element_in_vec(&self, input: Vec<T>) -> usize {
-        let mut index_of_first_non_zero_element = 0;
-        for j in 0..input.len() {
-            if input[j] == T::default() {
-                return index_of_first_non_zero_element;
-            }
-            index_of_first_non_zero_element += 1;
-        }
-
-        index_of_first_non_zero_element
-    }
-
     pub fn row_echolon_form(&self, mut k: usize) -> Matrix<T> {
         if self.all_zeroes() {
             return self.clone();
@@ -205,7 +193,7 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         let new_matrix = self.row_interchange(k, first_non_zero_column_index);
         let first_row = rows[0].clone();
         let index_of_leading_entry_of_first_row =
-            self.index_of_first_non_zero_element_in_vec(first_row.clone());
+            index_of_first_non_zero_element_in_vec(first_row.clone());
         let leading_entry_of_first_row = first_row[index_of_leading_entry_of_first_row];
         let scalar = T::from(1) / leading_entry_of_first_row;
         let mut new_matrix = new_matrix.multiply_row_by_scalar(k, scalar);
@@ -503,12 +491,26 @@ fn first_non_zero_vec_index<T: MatrixElementRequiredTraits<T>>(input: Vec<Vec<T>
     first_nonzero_vec_index - 1
 }
 
+fn index_of_first_non_zero_element_in_vec<T: MatrixElementRequiredTraits<T>>(
+    input: Vec<T>,
+) -> usize {
+    let mut index_of_first_non_zero_element = 0;
+    for element in input {
+        if element != T::default() {
+            return index_of_first_non_zero_element;
+        }
+        index_of_first_non_zero_element += 1;
+    }
+
+    index_of_first_non_zero_element
+}
+
 #[cfg(test)]
 mod tests {
     use rand::prelude::*;
     use std::ops::Add;
 
-    use crate::matrix_algebra::first_non_zero_vec_index;
+    use crate::matrix_algebra::{first_non_zero_vec_index, index_of_first_non_zero_element_in_vec};
 
     use super::{new_all_default, new_identity_matrix, Matrix};
 
@@ -887,6 +889,26 @@ mod tests {
         }
 
         assert_eq!(random_index, first_non_zero_vec_index(test_vec));
+    }
+
+    #[test]
+    fn test_index_of_first_non_zero_element_in_vec() {
+        let mut rng = rand::thread_rng();
+        let random_index = rng.gen_range(0..12);
+        let mut test_vec: Vec<i32> = vec![];
+
+        for i in 0..12 {
+            if i == random_index {
+                test_vec.push(1);
+            } else {
+                test_vec.push(0);
+            }
+        }
+
+        assert_eq!(
+            random_index,
+            index_of_first_non_zero_element_in_vec(test_vec)
+        );
     }
 
     #[test]
