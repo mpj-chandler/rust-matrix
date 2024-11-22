@@ -475,12 +475,12 @@ fn matrix_multiply<T: MatrixElementRequiredTraits<T>>(a: &Matrix<T>, b: &Matrix<
     }
 }
 
-fn first_non_zero_vec_index<T: MatrixElementRequiredTraits<T>>(input: Vec<Vec<T>>) -> usize {
+fn first_non_zero_vec_index<T: MatrixElementRequiredTraits<T>>(input: &Vec<Vec<T>>) -> usize {
     let mut first_nonzero_vec_index = 0;
 
     for vector in input {
-        for element in vector.clone() {
-            if element != T::default() {
+        for element in vector {
+            if *element != T::default() {
                 return first_nonzero_vec_index;
             }
         }
@@ -492,11 +492,11 @@ fn first_non_zero_vec_index<T: MatrixElementRequiredTraits<T>>(input: Vec<Vec<T>
 }
 
 fn index_of_first_non_zero_element_in_vec<T: MatrixElementRequiredTraits<T>>(
-    input: Vec<T>,
+    input: &Vec<T>,
 ) -> usize {
     let mut index_of_first_non_zero_element = 0;
     for element in input {
-        if element != T::default() {
+        if *element != T::default() {
             return index_of_first_non_zero_element;
         }
         index_of_first_non_zero_element += 1;
@@ -888,7 +888,7 @@ mod tests {
             }
         }
 
-        assert_eq!(random_index, first_non_zero_vec_index(test_vec));
+        assert_eq!(random_index, first_non_zero_vec_index(&test_vec));
     }
 
     #[test]
@@ -907,7 +907,7 @@ mod tests {
 
         assert_eq!(
             random_index,
-            index_of_first_non_zero_element_in_vec(test_vec)
+            index_of_first_non_zero_element_in_vec(&test_vec)
         );
     }
 
