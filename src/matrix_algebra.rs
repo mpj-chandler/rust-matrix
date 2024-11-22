@@ -169,8 +169,78 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         }
     }
 
-    pub fn row_echolon_form(&self) -> Matrix<T> {
-        self.clone()
+    fn all_zeroes(&self) -> bool {
+        for i in 0..self.m {
+            for j in 0..self.n {
+                if *self.get_entry_ij(i, j) != T::default() {
+                    return false;
+                }
+            }
+        }
+
+        true
+    }
+
+    fn index_of_first_non_zero_element_in_vec(&self, input: Vec<T>) -> usize {
+        let mut index_of_first_non_zero_element = 0;
+        for j in 0..input.len() {
+            if input[j] == T::default() {
+                return index_of_first_non_zero_element;
+            }
+            index_of_first_non_zero_element += 1;
+        }
+
+        index_of_first_non_zero_element
+    }
+
+    pub fn row_echolon_form(&self, mut k: usize) -> Matrix<T> {
+        if self.all_zeroes() {
+            return self.clone();
+        }
+
+        let columns = self.columns();
+        let rows = self.rows();
+        let first_non_zero_column_index = first_non_zero_vec_index(columns);
+
+        let new_matrix = self.row_interchange(k, first_non_zero_column_index);
+        let first_row = rows[0].clone();
+        let index_of_leading_entry_of_first_row =
+            self.index_of_first_non_zero_element_in_vec(first_row.clone());
+        let leading_entry_of_first_row = first_row[index_of_leading_entry_of_first_row];
+        let scalar = T::from(1) / leading_entry_of_first_row;
+        let mut new_matrix = new_matrix.multiply_row_by_scalar(k, scalar);
+        let columns = new_matrix.columns();
+        let rows = new_matrix.rows();
+        let first_non_zero_column = &columns[first_non_zero_column_index];
+        let first_non_zero_value = first_non_zero_column[first_non_zero_column_index];
+
+        for j in 1..first_non_zero_column.len() {
+            let value_in_non_zero_column_of_row = rows[j][first_non_zero_column_index];
+            if value_in_non_zero_column_of_row != T::default() {
+                let scalar = -T::from(1) * value_in_non_zero_column_of_row / first_non_zero_value;
+                new_matrix = new_matrix.add_row_to_scalar_multiple_of_row(j, 0, scalar);
+            }
+        }
+
+        if k != new_matrix.m {
+            k = k + 1;
+            let partitioned = new_matrix.partition(&[new_matrix.n], &[1, new_matrix.m - 1]);
+            let first_row = &partitioned[0];
+            let a_k_plus_one = &partitioned[1];
+
+            println!("{}, {}", first_row, a_k_plus_one);
+            let mut a_k_plus_one_in_row_echolon = a_k_plus_one.row_echolon_form(k);
+            let mut entries = first_row.entries.clone();
+            entries.append(&mut a_k_plus_one_in_row_echolon.entries);
+
+            return Matrix {
+                m: self.m,
+                n: self.n,
+                entries: entries.to_vec(),
+            };
+        }
+
+        new_matrix
     }
 
     pub fn columns(&self) -> Vec<Vec<T>> {
@@ -417,10 +487,28 @@ fn matrix_multiply<T: MatrixElementRequiredTraits<T>>(a: &Matrix<T>, b: &Matrix<
     }
 }
 
+fn first_non_zero_vec_index<T: MatrixElementRequiredTraits<T>>(input: Vec<Vec<T>>) -> usize {
+    let mut first_nonzero_vec_index = 0;
+
+    for vector in input {
+        for element in vector.clone() {
+            if element != T::default() {
+                return first_nonzero_vec_index;
+            }
+        }
+        print!("\n");
+        first_nonzero_vec_index += 1;
+    }
+
+    first_nonzero_vec_index - 1
+}
+
 #[cfg(test)]
 mod tests {
     use rand::prelude::*;
     use std::ops::Add;
+
+    use crate::matrix_algebra::first_non_zero_vec_index;
 
     use super::{new_all_default, new_identity_matrix, Matrix};
 
@@ -767,6 +855,41 @@ mod tests {
     }
 
     #[test]
+    fn test_all_zeroes() {
+        let mut entries = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0].to_vec();
+        let test_matrix = Matrix::new(3, 4, entries.clone());
+
+        assert_eq!(true, test_matrix.all_zeroes());
+
+        let mut rng = rand::thread_rng();
+        let random_index = rng.gen_range(0..12);
+        entries[random_index] = 1.0;
+
+        let test_matrix = Matrix::new(3, 4, entries.clone());
+
+        assert_eq!(false, test_matrix.all_zeroes());
+    }
+
+    #[test]
+    fn test_first_non_zero_vec_index() {
+        let mut rng = rand::thread_rng();
+        let random_index = rng.gen_range(0..12);
+        let mut test_vec: Vec<Vec<i32>> = vec![];
+        let zero_vec = [0, 0, 0].to_vec();
+        let non_zero_vec = [1, 2, 3].to_vec();
+
+        for i in 0..12 {
+            if i == random_index {
+                test_vec.push(non_zero_vec.clone());
+            } else {
+                test_vec.push(zero_vec.clone());
+            }
+        }
+
+        assert_eq!(random_index, first_non_zero_vec_index(test_vec));
+    }
+
+    #[test]
     fn test_row_echolon_form() {
         let test_matrix = Matrix::new(
             3,
@@ -777,7 +900,7 @@ mod tests {
             .to_vec(),
         );
 
-        let result = test_matrix.row_echolon_form();
+        let result = test_matrix.row_echolon_form(0);
 
         assert_eq!(
             result,
