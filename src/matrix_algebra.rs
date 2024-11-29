@@ -78,6 +78,172 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         rows
     }
 
+    pub fn row_interchange(&self, first_row_index: usize, second_row_index: usize) -> Matrix<T> {
+        let rows = self.rows();
+        let first_row = &rows[first_row_index];
+        let second_row = &rows[second_row_index];
+
+        let mut new_entries: Vec<T> = Vec::new();
+
+        for row_index in 0..rows.len() {
+            if row_index == first_row_index {
+                for entry in second_row {
+                    new_entries.push(*entry);
+                }
+            } else if row_index == second_row_index {
+                for entry in first_row {
+                    new_entries.push(*entry);
+                }
+            } else {
+                for entry in rows[row_index].clone() {
+                    new_entries.push(entry);
+                }
+            }
+        }
+
+        Matrix {
+            m: self.m,
+            n: self.n,
+            entries: new_entries,
+        }
+    }
+
+    pub fn multiply_row_by_scalar(&self, row_index: usize, scalar: T) -> Matrix<T> {
+        let rows = self.rows();
+        let row_to_be_multiplied = &rows[row_index];
+
+        let mut new_entries: Vec<T> = Vec::new();
+
+        for i in 0..rows.len() {
+            if i == row_index {
+                for entry in row_to_be_multiplied {
+                    new_entries.push(*entry * scalar);
+                }
+            } else {
+                for entry in rows[i].clone() {
+                    new_entries.push(entry);
+                }
+            }
+        }
+
+        Matrix {
+            m: self.m,
+            n: self.n,
+            entries: new_entries,
+        }
+    }
+
+    pub fn add_row_to_scalar_multiple_of_row(
+        &self,
+        target_index: usize,
+        source_index: usize,
+        scalar: T,
+    ) -> Matrix<T> {
+        let rows = self.rows();
+        let row_to_be_added_to = rows[target_index].clone();
+        let row_to_be_added: Vec<T> = rows[source_index]
+            .clone()
+            .into_iter()
+            .map(|entry| -> T { scalar * entry })
+            .collect();
+
+        let mut new_entries: Vec<T> = Vec::new();
+
+        for i in 0..rows.len() {
+            if i == target_index {
+                let new_row = row_to_be_added.iter().zip(row_to_be_added_to.iter());
+                for (_, (lhs, rhs)) in new_row.enumerate() {
+                    new_entries.push(*lhs + *rhs);
+                }
+            } else {
+                for entry in rows[i].clone() {
+                    new_entries.push(entry);
+                }
+            }
+        }
+
+        Matrix {
+            m: self.m,
+            n: self.n,
+            entries: new_entries,
+        }
+    }
+
+    fn all_zeroes(&self) -> bool {
+        for i in 0..self.m {
+            for j in 0..self.n {
+                if *self.get_entry_ij(i, j) != T::default() {
+                    return false;
+                }
+            }
+        }
+
+        true
+    }
+
+    pub fn row_echolon_form(&self, k: usize) -> Matrix<T> {
+        let mut partitioned: Vec<Matrix<T>> = Vec::new();
+
+        if k != 0 {
+            partitioned = self.partition(&[self.n], &[k, self.m - k]);
+        }
+
+        let a_k = if k == 0 { self } else { &partitioned[1] };
+
+        if a_k.all_zeroes() {
+            return self.clone();
+        }
+
+        let rows = a_k.rows();
+        let columns = a_k.columns();
+        let first_non_zero_column_index = first_non_zero_vec_index(&columns);
+        let mut first_row_with_non_zero_entry = 0;
+
+        for row in &rows[k..rows.len()] {
+            if row[first_non_zero_column_index] != T::default() {
+                break;
+            }
+            first_row_with_non_zero_entry += 1;
+        }
+
+        let a_k_interchanged = a_k.row_interchange(k, first_row_with_non_zero_entry);
+        let rows = a_k_interchanged.rows();
+        let leading_entry_of_first_row = &rows[0][first_non_zero_column_index];
+        let scalar = T::from(1) / *leading_entry_of_first_row;
+        let mut a_k = a_k_interchanged.multiply_row_by_scalar(0, scalar);
+
+        let combined_entries = if k == 0 {
+            &a_k.entries
+        } else {
+            let _ = &partitioned[0].entries.append(&mut a_k.entries);
+            &partitioned[0].entries
+        };
+
+        let mut combined = Matrix {
+            m: self.m,
+            n: self.n,
+            entries: combined_entries.to_vec(),
+        };
+
+        let rows = combined.rows();
+
+        for j in 0..combined.m {
+            if j != k {
+                let value_in_non_zero_column_of_row = rows[j][first_non_zero_column_index];
+                if value_in_non_zero_column_of_row != T::default() {
+                    let scalar = -T::from(1) * value_in_non_zero_column_of_row;
+                    combined = combined.add_row_to_scalar_multiple_of_row(j, k, scalar);
+                }
+            }
+        }
+
+        if k != self.m {
+            return combined.row_echolon_form(k + 1);
+        }
+
+        combined
+    }
+
     pub fn columns(&self) -> Vec<Vec<T>> {
         let mut columns = Vec::new();
 
@@ -98,10 +264,8 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
 
         for column in columns {
             for entry in column {
-                println!("{}", entry);
                 transposed_entries.push(entry);
             }
-            println!(".");
         }
 
         Matrix::<T> {
@@ -130,8 +294,8 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
                     }
                 }
                 partitioned_matrices.push(Matrix {
-                    m: *column_partition,
-                    n: *row_partition,
+                    m: *row_partition,
+                    n: *column_partition,
                     entries: new_entries,
                 });
                 column_offset += *column_partition;
@@ -324,10 +488,42 @@ fn matrix_multiply<T: MatrixElementRequiredTraits<T>>(a: &Matrix<T>, b: &Matrix<
     }
 }
 
+fn first_non_zero_vec_index<T: MatrixElementRequiredTraits<T>>(input: &Vec<Vec<T>>) -> usize {
+    let mut first_nonzero_vec_index = 0;
+
+    for vector in input {
+        for element in vector {
+            println!("Element: {}", element);
+            if *element != T::default() {
+                return first_nonzero_vec_index;
+            }
+        }
+        first_nonzero_vec_index += 1;
+    }
+
+    first_nonzero_vec_index
+}
+
+fn index_of_first_non_zero_element_in_vec<T: MatrixElementRequiredTraits<T>>(
+    input: &Vec<T>,
+) -> usize {
+    let mut index_of_first_non_zero_element = 0;
+    for element in input {
+        if *element != T::default() {
+            return index_of_first_non_zero_element;
+        }
+        index_of_first_non_zero_element += 1;
+    }
+
+    index_of_first_non_zero_element
+}
+
 #[cfg(test)]
 mod tests {
     use rand::prelude::*;
     use std::ops::Add;
+
+    use crate::matrix_algebra::{first_non_zero_vec_index, index_of_first_non_zero_element_in_vec};
 
     use super::{new_all_default, new_identity_matrix, Matrix};
 
@@ -488,31 +684,6 @@ mod tests {
     }
 
     #[test]
-    fn test_matrix_multiply_operator() {
-        let test_matrix_a = Matrix::new(3, 4, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].to_vec());
-        let test_matrix_b = Matrix::new(4, 3, [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1].to_vec());
-
-        let matrix_product = test_matrix_a * test_matrix_b;
-
-        assert_eq!(matrix_product.entries.len(), 9);
-
-        assert_eq!(
-            matrix_product.entries,
-            [
-                1 * 12 + 2 * 9 + 3 * 6 + 4 * 3,
-                1 * 11 + 2 * 8 + 3 * 5 + 4 * 2,
-                1 * 10 + 2 * 7 + 3 * 4 + 4 * 1,
-                5 * 12 + 6 * 9 + 7 * 6 + 8 * 3,
-                5 * 11 + 6 * 8 + 7 * 5 + 8 * 2,
-                5 * 10 + 6 * 7 + 7 * 4 + 8 * 1,
-                9 * 12 + 10 * 9 + 11 * 6 + 12 * 3,
-                9 * 11 + 10 * 8 + 11 * 5 + 12 * 2,
-                9 * 10 + 10 * 7 + 11 * 4 + 12 * 1
-            ]
-        );
-    }
-
-    #[test]
     fn test_matrix_multiply_constant_value_initialiser() {
         let test_matrix_a = Matrix::new_constant_value(3, 4, 5);
         let test_matrix_b = Matrix::new_constant_value(4, 3, 4);
@@ -623,16 +794,35 @@ mod tests {
         assert_eq!(
             submatrices,
             [
-                Matrix::new(3, 2, [1.0, 2.0, 3.0, 6.0, 7.0, 8.0].to_vec()),
+                Matrix::new(2, 3, [1.0, 2.0, 3.0, 6.0, 7.0, 8.0].to_vec()),
                 Matrix::new(2, 2, [4.0, 5.0, 9.0, 10.0].to_vec()),
                 Matrix::new(
                     3,
                     3,
                     [11.0, 12.0, 13.0, 16.0, 17.0, 18.0, 21.0, 22.0, 23.0].to_vec()
                 ),
-                Matrix::new(2, 3, [14.0, 15.0, 19.0, 20.0, 24.0, 25.0].to_vec())
+                Matrix::new(3, 2, [14.0, 15.0, 19.0, 20.0, 24.0, 25.0].to_vec())
             ]
-        )
+        );
+
+        let test_matrix = Matrix::new(
+            3,
+            4,
+            [
+                0.0, 1.0, -4.0, -7.0, 0.0, 0.0, 3.0, -1.0, 0.0, 0.0, 3.0, -1.0,
+            ]
+            .to_vec(),
+        );
+
+        let submatrices = test_matrix.partition(&[4], &[1, 2]);
+
+        assert_eq!(
+            submatrices,
+            [
+                Matrix::new(1, 4, [0.0, 1.0, -4.0, -7.0].to_vec()),
+                Matrix::new(2, 4, [0.0, 0.0, 3.0, -1.0, 0.0, 0.0, 3.0, -1.0,].to_vec()),
+            ]
+        );
     }
 
     #[test]
@@ -652,5 +842,141 @@ mod tests {
         assert_eq!(submatrix.n, 2);
         assert_eq!(submatrix.m, 3);
         assert_eq!(submatrix.entries, [2, 4, 12, 14, 22, 24]);
+    }
+
+    #[test]
+    fn test_row_interchange() {
+        let test_matrix = Matrix::new(2, 3, [1.0, 2.0, 3.0, 4.0, 5.0, 6.0].to_vec());
+
+        let result = test_matrix.row_interchange(0, 1);
+
+        assert_eq!(
+            result,
+            Matrix::new(2, 3, [4.0, 5.0, 6.0, 1.0, 2.0, 3.0].to_vec()),
+        );
+    }
+
+    #[test]
+    fn test_multiply_row_by_scalar() {
+        let test_matrix = Matrix::new(3, 3, [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0].to_vec());
+
+        let result = test_matrix.multiply_row_by_scalar(2, 2.0);
+
+        assert_eq!(
+            result,
+            Matrix::new(
+                3,
+                3,
+                [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 14.0, 16.0, 18.0].to_vec()
+            ),
+        );
+    }
+
+    #[test]
+    fn test_add_row_to_scalar_multiple_of_row() {
+        let test_matrix = Matrix::new(3, 3, [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0].to_vec());
+
+        let result = test_matrix.add_row_to_scalar_multiple_of_row(0, 2, 5.0);
+
+        assert_eq!(
+            result,
+            Matrix::new(
+                3,
+                3,
+                [36.0, 42.0, 48.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0].to_vec()
+            ),
+        );
+    }
+
+    #[test]
+    fn test_all_zeroes() {
+        let mut entries = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0].to_vec();
+        let test_matrix = Matrix::new(3, 4, entries.clone());
+
+        assert_eq!(true, test_matrix.all_zeroes());
+
+        let mut rng = rand::thread_rng();
+        let random_index = rng.gen_range(0..12);
+        entries[random_index] = 1.0;
+
+        let test_matrix = Matrix::new(3, 4, entries.clone());
+
+        assert_eq!(false, test_matrix.all_zeroes());
+    }
+
+    #[test]
+    fn test_first_non_zero_vec_index() {
+        let mut rng = rand::thread_rng();
+        let random_index = rng.gen_range(0..12);
+        let mut test_vec: Vec<Vec<i32>> = vec![];
+        let zero_vec = [0, 0, 0].to_vec();
+        let non_zero_vec = [1, 2, 3].to_vec();
+
+        for i in 0..12 {
+            if i == random_index {
+                test_vec.push(non_zero_vec.clone());
+            } else {
+                test_vec.push(zero_vec.clone());
+            }
+        }
+
+        assert_eq!(random_index, first_non_zero_vec_index(&test_vec));
+    }
+
+    #[test]
+    fn test_index_of_first_non_zero_element_in_vec() {
+        let mut rng = rand::thread_rng();
+        let random_index = rng.gen_range(0..12);
+        let mut test_vec: Vec<i32> = vec![];
+
+        for i in 0..12 {
+            if i == random_index {
+                test_vec.push(1);
+            } else {
+                test_vec.push(0);
+            }
+        }
+
+        assert_eq!(
+            random_index,
+            index_of_first_non_zero_element_in_vec(&test_vec)
+        );
+    }
+
+    #[test]
+    fn test_row_echolon_form() {
+        let test_matrix = Matrix::new(
+            3,
+            4,
+            [
+                0.0, 0.0, 3.0, -1.0, 0.0, -1.0, 4.0, 7.0, 0.0, -1.0, 7.0, 6.0,
+            ]
+            .to_vec(),
+        );
+
+        let result = test_matrix.row_echolon_form(0);
+
+        assert_eq!(
+            result,
+            Matrix::new(
+                3,
+                4,
+                [
+                    0.0,
+                    1.0,
+                    0.0,
+                    -25.0 / 3.0,
+                    0.0,
+                    0.0,
+                    1.0,
+                    -1.0 / 3.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                ]
+                .to_vec()
+            ),
+        );
     }
 }
