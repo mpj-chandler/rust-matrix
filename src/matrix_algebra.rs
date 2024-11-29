@@ -181,54 +181,93 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         true
     }
 
-    pub fn row_echolon_form(&self, mut k: usize) -> Matrix<T> {
-        if self.all_zeroes() {
+    pub fn row_echolon_form(&self, k: usize) -> Matrix<T> {
+        let mut partitioned: Vec<Matrix<T>> = Vec::new();
+
+        if k != 0 {
+            partitioned = self.partition(&[self.n], &[k, self.m - k]);
+        }
+
+        let a_k = if k == 0 { self } else { &partitioned[1] };
+        println!("A_{}:\n{}", k, a_k);
+
+        if a_k.all_zeroes() {
             return self.clone();
         }
 
-        let columns = self.columns();
-        let rows = self.rows();
-        let first_non_zero_column_index = first_non_zero_vec_index(columns);
+        let rows = a_k.rows();
+        let columns = a_k.columns();
 
-        let new_matrix = self.row_interchange(k, first_non_zero_column_index);
-        let first_row = rows[0].clone();
-        let index_of_leading_entry_of_first_row =
-            index_of_first_non_zero_element_in_vec(first_row.clone());
-        let leading_entry_of_first_row = first_row[index_of_leading_entry_of_first_row];
-        let scalar = T::from(1) / leading_entry_of_first_row;
-        let mut new_matrix = new_matrix.multiply_row_by_scalar(k, scalar);
-        let columns = new_matrix.columns();
-        let rows = new_matrix.rows();
-        let first_non_zero_column = &columns[first_non_zero_column_index];
-        let first_non_zero_value = first_non_zero_column[first_non_zero_column_index];
+        let first_non_zero_column_index = first_non_zero_vec_index(&columns);
+        println!("First non zero column: {}", first_non_zero_column_index);
+        let mut first_row_with_non_zero_entry = 0;
 
-        for j in 1..first_non_zero_column.len() {
-            let value_in_non_zero_column_of_row = rows[j][first_non_zero_column_index];
-            if value_in_non_zero_column_of_row != T::default() {
-                let scalar = -T::from(1) * value_in_non_zero_column_of_row / first_non_zero_value;
-                new_matrix = new_matrix.add_row_to_scalar_multiple_of_row(j, 0, scalar);
+        for row in &rows[k..rows.len()] {
+            if row[first_non_zero_column_index] != T::default() {
+                break;
+            }
+            first_row_with_non_zero_entry += 1;
+        }
+
+        println!(
+            "First non-zero row with entry in column {}: {}",
+            first_non_zero_column_index, first_row_with_non_zero_entry
+        );
+
+        let a_k_interchanged = a_k.row_interchange(k, first_row_with_non_zero_entry);
+        println!("f). a_k_interchanged:\n{}", a_k_interchanged);
+        let rows = a_k_interchanged.rows();
+
+        let leading_entry_of_first_row = &rows[0][first_non_zero_column_index];
+        let scalar = T::from(1) / *leading_entry_of_first_row;
+        println!("Required scalar multiple: {}", scalar);
+        let mut a_k = a_k_interchanged.multiply_row_by_scalar(0, scalar);
+        println!("g). a_k:\n{}", a_k);
+
+        let combined_entries = if k == 0 {
+            println!("k == 0");
+            a_k.entries
+        } else {
+            let mut combined = partitioned[0].entries.clone();
+            combined.append(&mut a_k.entries);
+            combined
+        };
+
+        let mut combined = Matrix {
+            m: self.m,
+            n: self.n,
+            entries: combined_entries,
+        };
+
+        println!("Combined: {}", combined);
+
+        let rows = combined.rows();
+
+        for j in 0..combined.m {
+            if j != k {
+                let value_in_non_zero_column_of_row = rows[j][first_non_zero_column_index];
+                if value_in_non_zero_column_of_row != T::default() {
+                    println!("j: {}, {}", j, value_in_non_zero_column_of_row);
+                    println!(
+                        "leading_entry_of_first_row: {}",
+                        *leading_entry_of_first_row
+                    );
+                    let scalar = -T::from(1) * value_in_non_zero_column_of_row;
+                    println!(
+                        "Required scalar multiple to make leading value 0: {}",
+                        scalar
+                    );
+                    combined = combined.add_row_to_scalar_multiple_of_row(j, k, scalar);
+                    println!("h). a_k:\n{}", combined);
+                }
             }
         }
 
-        if k != new_matrix.m {
-            k = k + 1;
-            let partitioned = new_matrix.partition(&[new_matrix.n], &[1, new_matrix.m - 1]);
-            let first_row = &partitioned[0];
-            let a_k_plus_one = &partitioned[1];
-
-            println!("{}, {}", first_row, a_k_plus_one);
-            let mut a_k_plus_one_in_row_echolon = a_k_plus_one.row_echolon_form(k);
-            let mut entries = first_row.entries.clone();
-            entries.append(&mut a_k_plus_one_in_row_echolon.entries);
-
-            return Matrix {
-                m: self.m,
-                n: self.n,
-                entries: entries.to_vec(),
-            };
+        if k != self.m {
+            return combined.row_echolon_form(k + 1);
         }
 
-        new_matrix
+        combined
     }
 
     pub fn columns(&self) -> Vec<Vec<T>> {
@@ -281,8 +320,8 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
                     }
                 }
                 partitioned_matrices.push(Matrix {
-                    m: *column_partition,
-                    n: *row_partition,
+                    m: *row_partition,
+                    n: *column_partition,
                     entries: new_entries,
                 });
                 column_offset += *column_partition;
@@ -480,15 +519,15 @@ fn first_non_zero_vec_index<T: MatrixElementRequiredTraits<T>>(input: &Vec<Vec<T
 
     for vector in input {
         for element in vector {
+            println!("Element: {}", element);
             if *element != T::default() {
                 return first_nonzero_vec_index;
             }
         }
-        print!("\n");
         first_nonzero_vec_index += 1;
     }
 
-    first_nonzero_vec_index - 1
+    first_nonzero_vec_index
 }
 
 fn index_of_first_non_zero_element_in_vec<T: MatrixElementRequiredTraits<T>>(
@@ -781,16 +820,35 @@ mod tests {
         assert_eq!(
             submatrices,
             [
-                Matrix::new(3, 2, [1.0, 2.0, 3.0, 6.0, 7.0, 8.0].to_vec()),
+                Matrix::new(2, 3, [1.0, 2.0, 3.0, 6.0, 7.0, 8.0].to_vec()),
                 Matrix::new(2, 2, [4.0, 5.0, 9.0, 10.0].to_vec()),
                 Matrix::new(
                     3,
                     3,
                     [11.0, 12.0, 13.0, 16.0, 17.0, 18.0, 21.0, 22.0, 23.0].to_vec()
                 ),
-                Matrix::new(2, 3, [14.0, 15.0, 19.0, 20.0, 24.0, 25.0].to_vec())
+                Matrix::new(3, 2, [14.0, 15.0, 19.0, 20.0, 24.0, 25.0].to_vec())
             ]
-        )
+        );
+
+        let test_matrix = Matrix::new(
+            3,
+            4,
+            [
+                0.0, 1.0, -4.0, -7.0, 0.0, 0.0, 3.0, -1.0, 0.0, 0.0, 3.0, -1.0,
+            ]
+            .to_vec(),
+        );
+
+        let submatrices = test_matrix.partition(&[4], &[1, 2]);
+
+        assert_eq!(
+            submatrices,
+            [
+                Matrix::new(1, 4, [0.0, 1.0, -4.0, -7.0].to_vec()),
+                Matrix::new(2, 4, [0.0, 0.0, 3.0, -1.0, 0.0, 0.0, 3.0, -1.0,].to_vec()),
+            ]
+        );
     }
 
     #[test]
