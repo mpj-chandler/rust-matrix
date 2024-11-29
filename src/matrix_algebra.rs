@@ -189,7 +189,6 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         }
 
         let a_k = if k == 0 { self } else { &partitioned[1] };
-        println!("A_{}:\n{}", k, a_k);
 
         if a_k.all_zeroes() {
             return self.clone();
@@ -197,9 +196,7 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
 
         let rows = a_k.rows();
         let columns = a_k.columns();
-
         let first_non_zero_column_index = first_non_zero_vec_index(&columns);
-        println!("First non zero column: {}", first_non_zero_column_index);
         let mut first_row_with_non_zero_entry = 0;
 
         for row in &rows[k..rows.len()] {
@@ -209,37 +206,24 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
             first_row_with_non_zero_entry += 1;
         }
 
-        println!(
-            "First non-zero row with entry in column {}: {}",
-            first_non_zero_column_index, first_row_with_non_zero_entry
-        );
-
         let a_k_interchanged = a_k.row_interchange(k, first_row_with_non_zero_entry);
-        println!("f). a_k_interchanged:\n{}", a_k_interchanged);
         let rows = a_k_interchanged.rows();
-
         let leading_entry_of_first_row = &rows[0][first_non_zero_column_index];
         let scalar = T::from(1) / *leading_entry_of_first_row;
-        println!("Required scalar multiple: {}", scalar);
         let mut a_k = a_k_interchanged.multiply_row_by_scalar(0, scalar);
-        println!("g). a_k:\n{}", a_k);
 
         let combined_entries = if k == 0 {
-            println!("k == 0");
-            a_k.entries
+            &a_k.entries
         } else {
-            let mut combined = partitioned[0].entries.clone();
-            combined.append(&mut a_k.entries);
-            combined
+            let _ = &partitioned[0].entries.append(&mut a_k.entries);
+            &partitioned[0].entries
         };
 
         let mut combined = Matrix {
             m: self.m,
             n: self.n,
-            entries: combined_entries,
+            entries: combined_entries.to_vec(),
         };
-
-        println!("Combined: {}", combined);
 
         let rows = combined.rows();
 
@@ -247,18 +231,8 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
             if j != k {
                 let value_in_non_zero_column_of_row = rows[j][first_non_zero_column_index];
                 if value_in_non_zero_column_of_row != T::default() {
-                    println!("j: {}, {}", j, value_in_non_zero_column_of_row);
-                    println!(
-                        "leading_entry_of_first_row: {}",
-                        *leading_entry_of_first_row
-                    );
                     let scalar = -T::from(1) * value_in_non_zero_column_of_row;
-                    println!(
-                        "Required scalar multiple to make leading value 0: {}",
-                        scalar
-                    );
                     combined = combined.add_row_to_scalar_multiple_of_row(j, k, scalar);
-                    println!("h). a_k:\n{}", combined);
                 }
             }
         }
