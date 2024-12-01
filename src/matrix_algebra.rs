@@ -1005,8 +1005,6 @@ mod tests {
             ),
         );
 
-        println!("TEST 1 PASSED");
-
         let test_matrix = Matrix::new(
             3,
             3,
@@ -1016,5 +1014,22 @@ mod tests {
         let result = test_matrix.row_echolon_form(0);
 
         assert_eq!(result, new_identity_matrix(3));
+
+        let test_matrix = Matrix::new(
+            3,
+            4,
+            [0.0, 2.0, 1.0, 4.0, 0.0, 0.0, 2.0, 6.0, 1.0, 0.0, -3.0, 2.0].to_vec(),
+        );
+
+        let result = test_matrix.row_echolon_form(0);
+
+        assert_eq!(
+            result,
+            Matrix::new(
+                3,
+                4,
+                [1.0, 0.0, 0.0, 11.0, 0.0, 1.0, 0.0, 0.5, 0.0, 0.0, 1.0, 3.0].to_vec()
+            )
+        );
     }
 }
