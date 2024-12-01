@@ -270,6 +270,10 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         combined
     }
 
+    pub fn column_echolon_form(&self) -> Matrix<T> {
+        self.transpose().row_echolon_form(0).transpose()
+    }
+
     pub fn columns(&self) -> Vec<Vec<T>> {
         let mut columns = Vec::new();
 
@@ -1074,8 +1078,6 @@ mod tests {
             )
         );
 
-        println!("PASSED\n\n\n\n");
-
         let test_matrix = Matrix::new(
             3,
             2,
@@ -1108,7 +1110,26 @@ mod tests {
                 .to_vec()
             )
         );
+    }
 
-        println!("PASSED\n\n\n\n");
+    #[test]
+    fn test_column_echolon_form() {
+        let test_matrix = Matrix::new(2, 3, [1.0, 2.0, 3.0, 2.0, 3.0, 4.0].to_vec());
+
+        let result = test_matrix.column_echolon_form();
+
+        assert_eq!(
+            result,
+            Matrix::new(2, 3, [1.0, 0.0, 0.0, 0.0, 1.0, 0.0,].to_vec())
+        );
+
+        let test_matrix = Matrix::new(3, 3, [1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 3.0, 3.0, 3.0].to_vec());
+
+        let result = test_matrix.column_echolon_form();
+
+        assert_eq!(
+            result,
+            Matrix::new(3, 3, [1.0, 0.0, 0.0, 2.0, 0.0, 0.0, 3.0, 0.0, 0.0].to_vec())
+        );
     }
 }
