@@ -181,7 +181,7 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         true
     }
 
-    pub fn row_echolon_form(&self, k: usize) -> Matrix<T> {
+    fn row_echolon_form_recursive(&self, k: usize) -> Matrix<T> {
         let mut partitioned: Vec<Matrix<T>> = Vec::new();
 
         if k != 0 {
@@ -239,14 +239,18 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         }
 
         if k != self.m - 1 {
-            return combined.row_echolon_form(k + 1);
+            return combined.row_echolon_form_recursive(k + 1);
         }
 
         combined
     }
 
+    pub fn row_echolon_form(&self) -> Matrix<T> {
+        self.row_echolon_form_recursive(0)
+    }
+
     pub fn column_echolon_form(&self) -> Matrix<T> {
-        self.transpose().row_echolon_form(0).transpose()
+        self.transpose().row_echolon_form().transpose()
     }
 
     pub fn columns(&self) -> Vec<Vec<T>> {
@@ -962,7 +966,7 @@ mod tests {
             .to_vec(),
         );
 
-        let result = test_matrix.row_echolon_form(0);
+        let result = test_matrix.row_echolon_form();
 
         assert_eq!(
             result,
@@ -993,7 +997,7 @@ mod tests {
             [4.0, -8.0, 16.0, 1.0, -3.0, 6.0, 2.0, 1.0, 1.0].to_vec(),
         );
 
-        let result = test_matrix.row_echolon_form(0);
+        let result = test_matrix.row_echolon_form();
 
         assert_eq!(result, new_identity_matrix(3));
 
@@ -1003,7 +1007,7 @@ mod tests {
             [0.0, 2.0, 1.0, 4.0, 0.0, 0.0, 2.0, 6.0, 1.0, 0.0, -3.0, 2.0].to_vec(),
         );
 
-        let result = test_matrix.row_echolon_form(0);
+        let result = test_matrix.row_echolon_form();
 
         assert_eq!(
             result,
@@ -1031,7 +1035,7 @@ mod tests {
             .to_vec(),
         );
 
-        let result = test_matrix.row_echolon_form(0);
+        let result = test_matrix.row_echolon_form();
 
         assert_eq!(
             result,
@@ -1067,7 +1071,7 @@ mod tests {
             .to_vec(),
         );
 
-        let result = test_matrix.row_echolon_form(0);
+        let result = test_matrix.row_echolon_form();
 
         assert_eq!(
             result,
