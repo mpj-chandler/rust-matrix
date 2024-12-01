@@ -190,6 +190,8 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
 
         let a_k = if k == 0 { self } else { &partitioned[1] };
 
+        println!("j) a_k:\n{}", a_k);
+
         if a_k.all_zeroes() {
             return self.clone();
         }
@@ -197,20 +199,38 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         let rows = a_k.rows();
         let columns = a_k.columns();
         let first_non_zero_column_index = first_non_zero_vec_index(&columns);
+        println!(
+            "d) first non-zero column of a_k: {}",
+            first_non_zero_column_index
+        );
         let mut first_row_with_non_zero_entry = 0;
 
-        for row in &rows[k..rows.len()] {
+        for row in &rows {
             if row[first_non_zero_column_index] != T::default() {
                 break;
             }
             first_row_with_non_zero_entry += 1;
         }
 
-        let a_k_interchanged = a_k.row_interchange(k, first_row_with_non_zero_entry);
+        println!(
+            "e) first row having non-zero entry in column {}: {}",
+            first_non_zero_column_index, first_row_with_non_zero_entry
+        );
+
+        println!(
+            "f) interchanging row {} with {}",
+            0, first_row_with_non_zero_entry
+        );
+        let a_k_interchanged = a_k.row_interchange(0, first_row_with_non_zero_entry);
+        println!("f) {}", a_k_interchanged);
         let rows = a_k_interchanged.rows();
         let leading_entry_of_first_row = &rows[0][first_non_zero_column_index];
         let scalar = T::from(1) / *leading_entry_of_first_row;
         let mut a_k = a_k_interchanged.multiply_row_by_scalar(0, scalar);
+        println!(
+            "g) making first row equal to 1 by multiplying by {}:\n{}",
+            scalar, a_k
+        );
 
         let combined_entries = if k == 0 {
             &a_k.entries
@@ -237,7 +257,13 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
             }
         }
 
-        if k != self.m {
+        println!(
+            "h) reduce all other entries of column {} of A to 0:\n{}",
+            first_non_zero_column_index, combined
+        );
+
+        println!("i) Does k == m? k: {}, m: {}", k, self.m - 1);
+        if k != self.m - 1 {
             return combined.row_echolon_form(k + 1);
         }
 
@@ -977,6 +1003,33 @@ mod tests {
                 ]
                 .to_vec()
             ),
+        );
+
+        let test_matrix = Matrix::new(
+            3,
+            3,
+            [4.0, -8.0, 16.0, 1.0, -3.0, 6.0, 2.0, 1.0, 1.0].to_vec(),
+        );
+
+        let result = test_matrix.row_echolon_form(0);
+
+        assert_eq!(result, new_identity_matrix(3));
+
+        let test_matrix = Matrix::new(
+            3,
+            4,
+            [0.0, 2.0, 1.0, 4.0, 0.0, 0.0, 2.0, 6.0, 1.0, 0.0, -3.0, 2.0].to_vec(),
+        );
+
+        let result = test_matrix.row_echolon_form(0);
+
+        assert_eq!(
+            result,
+            Matrix::new(
+                3,
+                4,
+                [1.0, 0.0, 0.0, 11.0, 0.0, 1.0, 0.0, 0.5, 0.0, 0.0, 1.0, 3.0].to_vec()
+            )
         );
     }
 }
