@@ -284,6 +284,10 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         }
     }
 
+    pub fn determinant(&self) -> T {
+        T::default()
+    }
+
     pub fn partition(
         &self,
         column_partitioning: &[usize],
@@ -1110,5 +1114,12 @@ mod tests {
             result,
             Matrix::new(3, 3, [1.0, 0.0, 0.0, 2.0, 0.0, 0.0, 3.0, 0.0, 0.0].to_vec())
         );
+    }
+
+    #[test]
+    fn test_determinant() {
+        let test_matrix = Matrix::new(3, 3, [2.0, 4.0, 6.0, 0.0, 2.0, 3.0, 1.0, 4.0, 9.0].to_vec());
+
+        assert_eq!(test_matrix.determinant(), 1.0);
     }
 }
