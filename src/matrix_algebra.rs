@@ -549,7 +549,10 @@ mod tests {
     use rand::prelude::*;
     use std::ops::Add;
 
-    use crate::matrix_algebra::{first_non_zero_vec_index, index_of_first_non_zero_element_in_vec};
+    use crate::{
+        complex_number::ComplexNumber,
+        matrix_algebra::{first_non_zero_vec_index, index_of_first_non_zero_element_in_vec},
+    };
 
     use super::{new_all_default, new_identity_matrix, Matrix};
 
@@ -1031,5 +1034,81 @@ mod tests {
                 [1.0, 0.0, 0.0, 11.0, 0.0, 1.0, 0.0, 0.5, 0.0, 0.0, 1.0, 3.0].to_vec()
             )
         );
+
+        let test_matrix = Matrix::new(
+            3,
+            3,
+            [
+                ComplexNumber::new(2.0, 0.0),
+                ComplexNumber::new(8.0, 2.0),
+                ComplexNumber::new(6.0, -6.0),
+                ComplexNumber::new(0.0, 1.0),
+                ComplexNumber::new(0.0, 5.0),
+                ComplexNumber::new(3.0, 3.0),
+                ComplexNumber::new(1.0, 2.0),
+                ComplexNumber::new(4.0, 11.0),
+                ComplexNumber::new(9.0, 3.0),
+            ]
+            .to_vec(),
+        );
+
+        let result = test_matrix.row_echolon_form(0);
+
+        assert_eq!(
+            result,
+            Matrix::new(
+                3,
+                3,
+                [
+                    ComplexNumber::new(1.0, 0.0),
+                    ComplexNumber::new(0.0, 0.0),
+                    ComplexNumber::new(3.0, -3.0),
+                    ComplexNumber::new(0.0, 0.0),
+                    ComplexNumber::new(1.0, 0.0),
+                    ComplexNumber::new(0.0, 0.0),
+                    ComplexNumber::new(0.0, 0.0),
+                    ComplexNumber::new(0.0, 0.0),
+                    ComplexNumber::new(0.0, 0.0),
+                ]
+                .to_vec()
+            )
+        );
+
+        println!("PASSED\n\n\n\n");
+
+        let test_matrix = Matrix::new(
+            3,
+            2,
+            [
+                ComplexNumber::new(1.0, 1.0),
+                ComplexNumber::new(1.0, -1.0),
+                ComplexNumber::new(2.0, 0.0),
+                ComplexNumber::new(2.0, 0.0),
+                ComplexNumber::new(1.0, 2.0),
+                ComplexNumber::new(2.0, -1.0),
+            ]
+            .to_vec(),
+        );
+
+        let result = test_matrix.row_echolon_form(0);
+
+        assert_eq!(
+            result,
+            Matrix::new(
+                3,
+                2,
+                [
+                    ComplexNumber::new(1.0, 0.0),
+                    ComplexNumber::new(0.0, 0.0),
+                    ComplexNumber::new(0.0, 0.0),
+                    ComplexNumber::new(1.0, 0.0),
+                    ComplexNumber::new(0.0, 0.0),
+                    ComplexNumber::new(0.0, 0.0),
+                ]
+                .to_vec()
+            )
+        );
+
+        println!("PASSED\n\n\n\n");
     }
 }
