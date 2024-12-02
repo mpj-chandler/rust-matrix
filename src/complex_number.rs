@@ -1,6 +1,6 @@
 use std::{
     fmt::{self, Display},
-    ops::{Add, AddAssign, Div, Mul, Neg, Sub},
+    ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Sub},
 };
 
 pub trait ComplexNumberRequiredTraits<T>:
@@ -9,6 +9,7 @@ pub trait ComplexNumberRequiredTraits<T>:
     + Mul<Output = T>
     + Div<Output = T>
     + AddAssign
+    + MulAssign
     + Clone
     + Copy
     + Display
@@ -25,6 +26,7 @@ impl<
             + Mul<Output = T>
             + Div<Output = T>
             + AddAssign
+            + MulAssign
             + Clone
             + Copy
             + Display
@@ -178,6 +180,19 @@ fn complex_number_add_assign<T: ComplexNumberRequiredTraits<T>>(
 impl<T: ComplexNumberRequiredTraits<T>> AddAssign for ComplexNumber<T> {
     fn add_assign(&mut self, rhs: Self) {
         *self = complex_number_add_assign::<T>(self, &rhs);
+    }
+}
+
+fn complex_number_mul_assign<T: ComplexNumberRequiredTraits<T>>(
+    lhs: &ComplexNumber<T>,
+    rhs: &ComplexNumber<T>,
+) -> ComplexNumber<T> {
+    complex_number_multiply(lhs, rhs)
+}
+
+impl<T: ComplexNumberRequiredTraits<T>> MulAssign for ComplexNumber<T> {
+    fn mul_assign(&mut self, rhs: Self) {
+        *self = complex_number_mul_assign::<T>(self, &rhs)
     }
 }
 
