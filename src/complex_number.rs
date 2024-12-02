@@ -41,8 +41,8 @@ impl<
 
 #[derive(PartialEq, Debug, PartialOrd, Copy, Clone)]
 pub struct ComplexNumber<T: ComplexNumberRequiredTraits<T>> {
-    real: T,
-    complex: T,
+    pub real: T,
+    pub complex: T,
 }
 
 impl<T: ComplexNumberRequiredTraits<T>> ComplexNumber<T> {

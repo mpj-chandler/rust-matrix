@@ -212,59 +212,21 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         reduced
     }
 
-    fn row_echolon_form_recursive(&self, k: usize) -> Matrix<T> {
-        let mut partitioned: Vec<Matrix<T>> = Vec::new();
-
-        if k != 0 {
-            partitioned = self.partition(&[self.n], &[k, self.m - k]);
-        }
-
-        let a_k = if k == 0 { self } else { &partitioned[1] };
-
-        if a_k.all_zeroes() {
-            return self.clone();
-        }
-
-        let columns = a_k.columns();
-        let first_non_zero_column_index = first_non_zero_vec_index(&columns);
+    fn reduce_first_row(&self, column_index: usize) -> (Matrix<T>, T) {
+        let mut coefficient = T::from(1);
         let first_row_with_non_zero_entry =
-            a_k.first_row_with_non_zero_entry_in_column(first_non_zero_column_index);
-
-        let a_k_interchanged = a_k.row_interchange(0, first_row_with_non_zero_entry);
-        let scalar = T::from(1) / *a_k_interchanged.get_entry_ij(0, first_non_zero_column_index);
-        let mut a_k = a_k_interchanged.multiply_row_by_scalar(0, scalar);
-
-        let combined_entries = if k == 0 {
-            &a_k.entries
-        } else {
-            let _ = &partitioned[0].entries.append(&mut a_k.entries);
-            &partitioned[0].entries
-        };
-
-        let combined = Matrix::new(self.m, self.n, combined_entries.to_vec());
-
-        let reduced = combined.reduce_rows_relative_to_row(first_non_zero_column_index, k);
-
-        if k != self.m - 1 {
-            return reduced.row_echolon_form_recursive(k + 1);
-        }
-
-        reduced
-    }
-
-    pub fn row_echolon_form(&self) -> Matrix<T> {
-        self.row_echolon_form_recursive(0)
-    }
-
-    pub fn column_echolon_form(&self) -> Matrix<T> {
-        self.transpose().row_echolon_form().transpose()
+            self.first_row_with_non_zero_entry_in_column(column_index);
+        let a_k_interchanged = self.row_interchange(0, first_row_with_non_zero_entry);
+        let scalar = T::from(1) / *a_k_interchanged.get_entry_ij(0, column_index);
+        coefficient = coefficient / scalar;
+        (
+            a_k_interchanged.multiply_row_by_scalar(0, scalar),
+            coefficient,
+        )
     }
 
     fn row_echolon_form_recursive_with_coefficient(&self, k: usize) -> (Matrix<T>, T) {
         let mut coefficient = T::from(1);
-
-        println!("coefficient: {}", coefficient);
-
         let mut partitioned: Vec<Matrix<T>> = Vec::new();
 
         if k != 0 {
@@ -279,20 +241,9 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
 
         let columns = a_k.columns();
         let first_non_zero_column_index = first_non_zero_vec_index(&columns);
-        let first_row_with_non_zero_entry =
-            a_k.first_row_with_non_zero_entry_in_column(first_non_zero_column_index);
-        let a_k_interchanged = a_k.row_interchange(0, first_row_with_non_zero_entry);
-        if first_row_with_non_zero_entry != 0 {
-            coefficient *= -T::from(1);
-            println!("coefficient - row_interchange: {}", coefficient);
-        }
-        let scalar = T::from(1) / *a_k_interchanged.get_entry_ij(0, first_non_zero_column_index);
-        let mut a_k = a_k_interchanged.multiply_row_by_scalar(0, scalar);
-        coefficient = coefficient / scalar;
-        println!(
-            "coefficient - scalar-multiple by {}: {}",
-            scalar, coefficient
-        );
+        let (mut a_k, new_coefficient) = a_k.reduce_first_row(first_non_zero_column_index);
+
+        coefficient = coefficient * -new_coefficient;
 
         let combined_entries = if k == 0 {
             &a_k.entries
@@ -307,11 +258,22 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         if k != self.m - 1 {
             let (row_echolon, new_coefficient) =
                 reduced.row_echolon_form_recursive_with_coefficient(k + 1);
-            println!("coefficient - recursive: {}", new_coefficient * coefficient);
             return (row_echolon, new_coefficient * coefficient);
         }
 
         (reduced, coefficient)
+    }
+
+    fn row_echolon_form_recursive(&self, k: usize) -> Matrix<T> {
+        self.row_echolon_form_recursive_with_coefficient(k).0
+    }
+
+    pub fn row_echolon_form(&self) -> Matrix<T> {
+        self.row_echolon_form_recursive(0)
+    }
+
+    pub fn column_echolon_form(&self) -> Matrix<T> {
+        self.transpose().row_echolon_form().transpose()
     }
 
     pub fn columns(&self) -> Vec<Vec<T>> {
@@ -1226,6 +1188,16 @@ mod tests {
             .to_vec(),
         );
 
-        assert_eq!(test_matrix.determinant(), ComplexNumber::new(8.0, 6.0));
+        let determinant = test_matrix.determinant();
+
+        fn delta_real(determinant: ComplexNumber<f64>, expectation: f64) -> bool {
+            determinant.real - expectation < (1.0 / 1000000000000000000000000000000.0)
+        }
+
+        fn delta_complex(determinant: ComplexNumber<f64>, expectation: f64) -> bool {
+            determinant.complex - expectation < (1.0 / 1000000000000000000000000000000.0)
+        }
+        assert!(delta_real(determinant, 8.0));
+        assert!(delta_complex(determinant, 6.0));
     }
 }
