@@ -342,7 +342,7 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         self.determinant() != T::default()
     }
 
-    pub fn adjoint(&self) -> Matrix<T> {
+    pub fn matrix_of_cofactors(&self) -> Matrix<T> {
         let mut entries: Vec<T> = Vec::new();
         let mut sign = T::from(1);
         for j in 0..self.m {
@@ -365,13 +365,15 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
             }
         }
 
-        let cofactor_matrix = Matrix {
+        Matrix {
             n: self.n,
             m: self.m,
             entries: entries,
-        };
+        }
+    }
 
-        cofactor_matrix.transpose()
+    pub fn adjoint(&self) -> Matrix<T> {
+        self.matrix_of_cofactors().transpose()
     }
 
     pub fn partition(
