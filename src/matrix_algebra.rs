@@ -308,9 +308,10 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
     }
 
     pub fn determinant(&self) -> T {
+        if self.n != self.m {
+            panic!("Non square matrices do not have determinants!");
+        }
         let (row_echolon_form, coefficient) = self.row_echolon_form_recursive_with_coefficient(0);
-
-        println!("REF:\n{}", row_echolon_form);
         let mut determinant: Option<T> = None;
 
         for i in 0..row_echolon_form.n {
@@ -329,6 +330,48 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
             Some(det) => return det * coefficient,
             None => panic!("Unable to calculate determinant!"),
         }
+    }
+
+    pub fn minor(&self, column_indices: &[usize], row_indices: &[usize]) -> T {
+        let submatrix = self.submatrix(column_indices, row_indices);
+
+        submatrix.determinant()
+    }
+
+    pub fn is_nonsingular(&self) -> bool {
+        self.determinant() != T::default()
+    }
+
+    pub fn adjoint(&self) -> Matrix<T> {
+        let mut entries: Vec<T> = Vec::new();
+        let mut sign = T::from(1);
+        for j in 0..self.m {
+            for i in 0..self.n {
+                let mut column_indices: Vec<usize> = Vec::new();
+                for index in 0..self.n {
+                    if index != i {
+                        column_indices.push(index);
+                    }
+                }
+                let mut row_indices: Vec<usize> = Vec::new();
+                for index in 0..self.m {
+                    if index != j {
+                        row_indices.push(index);
+                    }
+                }
+                let minor = self.minor(&column_indices, &row_indices);
+                entries.push(minor * sign);
+                sign = -sign;
+            }
+        }
+
+        let cofactor_matrix = Matrix {
+            n: self.n,
+            m: self.m,
+            entries: entries,
+        };
+
+        cofactor_matrix.transpose()
     }
 
     pub fn partition(
@@ -1199,5 +1242,38 @@ mod tests {
         }
         assert!(delta_real(determinant, 8.0));
         assert!(delta_complex(determinant, 6.0));
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_determinant_panic() {
+        let test_matrix = new_all_default::<f64>(3, 2);
+
+        test_matrix.determinant();
+    }
+
+    #[test]
+    fn test_adjoint() {
+        let test_matrix = Matrix::new(3, 3, [3.0, 4.0, 3.0, 5.0, 7.0, 2.0, 0.0, 0.0, 1.0].to_vec());
+
+        assert_eq!(
+            test_matrix.adjoint(),
+            Matrix::new(
+                3,
+                3,
+                [
+                    7.0,
+                    -4.0,
+                    -13.0,
+                    -5.0,
+                    3.0,
+                    9.0,
+                    0.0,
+                    0.0,
+                    1.0000000000000018
+                ]
+                .to_vec()
+            )
+        );
     }
 }
