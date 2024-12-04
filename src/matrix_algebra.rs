@@ -1,6 +1,6 @@
 use std::fmt;
 use std::fmt::Display;
-use std::ops::{Add, AddAssign, Div, Mul, Neg, Sub};
+use std::ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Sub};
 
 pub trait MatrixElementRequiredTraits<T>:
     Add<Output = T>
@@ -8,6 +8,7 @@ pub trait MatrixElementRequiredTraits<T>:
     + Mul<Output = T>
     + Div<Output = T>
     + AddAssign
+    + MulAssign
     + Clone
     + Copy
     + Display
@@ -24,6 +25,7 @@ impl<
             + Mul<Output = T>
             + Div<Output = T>
             + AddAssign
+            + MulAssign
             + Clone
             + Copy
             + Display
@@ -181,7 +183,50 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         true
     }
 
-    fn row_echolon_form_recursive(&self, k: usize) -> Matrix<T> {
+    fn first_row_with_non_zero_entry_in_column(&self, column_index: usize) -> usize {
+        let rows = self.rows();
+        let mut first_row_with_non_zero_entry = 0;
+
+        for row in rows {
+            if row[column_index] != T::default() {
+                break;
+            }
+            first_row_with_non_zero_entry += 1;
+        }
+
+        first_row_with_non_zero_entry
+    }
+
+    fn reduce_rows_relative_to_row(&self, column_index: usize, row_index: usize) -> Matrix<T> {
+        let mut reduced = self.clone();
+        for j in 0..self.m {
+            if j != row_index {
+                let value_in_non_zero_column_of_row = self.get_entry_ij(j, column_index);
+                if *value_in_non_zero_column_of_row != T::default() {
+                    let scalar = -T::from(1) * *value_in_non_zero_column_of_row;
+                    reduced = reduced.add_row_to_scalar_multiple_of_row(j, row_index, scalar);
+                }
+            }
+        }
+
+        reduced
+    }
+
+    fn reduce_first_row(&self, column_index: usize) -> (Matrix<T>, T) {
+        let mut coefficient = T::from(1);
+        let first_row_with_non_zero_entry =
+            self.first_row_with_non_zero_entry_in_column(column_index);
+        let a_k_interchanged = self.row_interchange(0, first_row_with_non_zero_entry);
+        let scalar = T::from(1) / *a_k_interchanged.get_entry_ij(0, column_index);
+        coefficient = coefficient / scalar;
+        (
+            a_k_interchanged.multiply_row_by_scalar(0, scalar),
+            coefficient,
+        )
+    }
+
+    fn row_echolon_form_recursive_with_coefficient(&self, k: usize) -> (Matrix<T>, T) {
+        let mut coefficient = T::from(1);
         let mut partitioned: Vec<Matrix<T>> = Vec::new();
 
         if k != 0 {
@@ -191,27 +236,14 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         let a_k = if k == 0 { self } else { &partitioned[1] };
 
         if a_k.all_zeroes() {
-            return self.clone();
+            return (self.clone(), coefficient);
         }
 
-        let rows = a_k.rows();
         let columns = a_k.columns();
         let first_non_zero_column_index = first_non_zero_vec_index(&columns);
-        let mut first_row_with_non_zero_entry = 0;
+        let (mut a_k, new_coefficient) = a_k.reduce_first_row(first_non_zero_column_index);
 
-        for row in &rows {
-            if row[first_non_zero_column_index] != T::default() {
-                break;
-            }
-            first_row_with_non_zero_entry += 1;
-        }
-
-        let a_k_interchanged = a_k.row_interchange(0, first_row_with_non_zero_entry);
-        println!("f) {}", a_k_interchanged);
-        let rows = a_k_interchanged.rows();
-        let leading_entry_of_first_row = &rows[0][first_non_zero_column_index];
-        let scalar = T::from(1) / *leading_entry_of_first_row;
-        let mut a_k = a_k_interchanged.multiply_row_by_scalar(0, scalar);
+        coefficient = coefficient * -new_coefficient;
 
         let combined_entries = if k == 0 {
             &a_k.entries
@@ -220,29 +252,20 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
             &partitioned[0].entries
         };
 
-        let mut combined = Matrix {
-            m: self.m,
-            n: self.n,
-            entries: combined_entries.to_vec(),
-        };
-
-        let rows = combined.rows();
-
-        for j in 0..combined.m {
-            if j != k {
-                let value_in_non_zero_column_of_row = rows[j][first_non_zero_column_index];
-                if value_in_non_zero_column_of_row != T::default() {
-                    let scalar = -T::from(1) * value_in_non_zero_column_of_row;
-                    combined = combined.add_row_to_scalar_multiple_of_row(j, k, scalar);
-                }
-            }
-        }
+        let combined = Matrix::new(self.m, self.n, combined_entries.to_vec());
+        let reduced = combined.reduce_rows_relative_to_row(first_non_zero_column_index, k);
 
         if k != self.m - 1 {
-            return combined.row_echolon_form_recursive(k + 1);
+            let (row_echolon, new_coefficient) =
+                reduced.row_echolon_form_recursive_with_coefficient(k + 1);
+            return (row_echolon, new_coefficient * coefficient);
         }
 
-        combined
+        (reduced, coefficient)
+    }
+
+    fn row_echolon_form_recursive(&self, k: usize) -> Matrix<T> {
+        self.row_echolon_form_recursive_with_coefficient(k).0
     }
 
     pub fn row_echolon_form(&self) -> Matrix<T> {
@@ -282,6 +305,75 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
             n: self.m,
             entries: transposed_entries,
         }
+    }
+
+    pub fn determinant(&self) -> T {
+        if self.n != self.m {
+            panic!("Non square matrices do not have determinants!");
+        }
+        let (row_echolon_form, coefficient) = self.row_echolon_form_recursive_with_coefficient(0);
+        let mut determinant: Option<T> = None;
+
+        for i in 0..row_echolon_form.n {
+            for j in 0..row_echolon_form.m {
+                if i == j {
+                    let entry = row_echolon_form.get_entry_ij(i, j);
+                    match determinant {
+                        None => determinant = Some(*entry),
+                        Some(det) => determinant = Some(det * *entry),
+                    }
+                }
+            }
+        }
+
+        match determinant {
+            Some(det) => return det * coefficient,
+            None => panic!("Unable to calculate determinant!"),
+        }
+    }
+
+    pub fn minor(&self, column_indices: &[usize], row_indices: &[usize]) -> T {
+        let submatrix = self.submatrix(column_indices, row_indices);
+
+        submatrix.determinant()
+    }
+
+    pub fn is_nonsingular(&self) -> bool {
+        self.determinant() != T::default()
+    }
+
+    pub fn matrix_of_cofactors(&self) -> Matrix<T> {
+        let mut entries: Vec<T> = Vec::new();
+        let mut sign = T::from(1);
+        for j in 0..self.m {
+            for i in 0..self.n {
+                let mut column_indices: Vec<usize> = Vec::new();
+                for index in 0..self.n {
+                    if index != i {
+                        column_indices.push(index);
+                    }
+                }
+                let mut row_indices: Vec<usize> = Vec::new();
+                for index in 0..self.m {
+                    if index != j {
+                        row_indices.push(index);
+                    }
+                }
+                let minor = self.minor(&column_indices, &row_indices);
+                entries.push(minor * sign);
+                sign = -sign;
+            }
+        }
+
+        Matrix {
+            n: self.n,
+            m: self.m,
+            entries,
+        }
+    }
+
+    pub fn adjoint(&self) -> Matrix<T> {
+        self.matrix_of_cofactors().transpose()
     }
 
     pub fn partition(
@@ -502,7 +594,6 @@ fn first_non_zero_vec_index<T: MatrixElementRequiredTraits<T>>(input: &Vec<Vec<T
 
     for vector in input {
         for element in vector {
-            println!("Element: {}", element);
             if *element != T::default() {
                 return first_nonzero_vec_index;
             }
@@ -1109,6 +1200,82 @@ mod tests {
         assert_eq!(
             result,
             Matrix::new(3, 3, [1.0, 0.0, 0.0, 2.0, 0.0, 0.0, 3.0, 0.0, 0.0].to_vec())
+        );
+    }
+
+    #[test]
+    fn test_determinant() {
+        let test_matrix = Matrix::new(
+            4,
+            4,
+            [
+                2.0, 2.0, -1.0, 9.0, 4.0, 2.0, 1.0, 17.0, 1.0, -1.0, 1.0, 2.0, 2.0, 1.0, 1.0, 9.0,
+            ]
+            .to_vec(),
+        );
+
+        assert_eq!(test_matrix.determinant(), 0.0);
+
+        let test_matrix = Matrix::new(
+            3,
+            3,
+            [
+                ComplexNumber::new(1.0, 0.0),
+                ComplexNumber::new(1.0, 0.0),
+                ComplexNumber::new(0.0, 1.0),
+                ComplexNumber::new(1.0, 1.0),
+                ComplexNumber::new(1.0, 1.0),
+                ComplexNumber::new(1.0, 0.0),
+                ComplexNumber::new(2.0, 3.0),
+                ComplexNumber::new(0.0, -1.0),
+                ComplexNumber::new(3.0, 0.0),
+            ]
+            .to_vec(),
+        );
+
+        let determinant = test_matrix.determinant();
+
+        fn delta_real(determinant: ComplexNumber<f64>, expectation: f64) -> bool {
+            determinant.real - expectation < (1.0 / 1000000000000000000000000000000.0)
+        }
+
+        fn delta_complex(determinant: ComplexNumber<f64>, expectation: f64) -> bool {
+            determinant.complex - expectation < (1.0 / 1000000000000000000000000000000.0)
+        }
+        assert!(delta_real(determinant, 8.0));
+        assert!(delta_complex(determinant, 6.0));
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_determinant_panic() {
+        let test_matrix = new_all_default::<f64>(3, 2);
+
+        test_matrix.determinant();
+    }
+
+    #[test]
+    fn test_adjoint() {
+        let test_matrix = Matrix::new(3, 3, [3.0, 4.0, 3.0, 5.0, 7.0, 2.0, 0.0, 0.0, 1.0].to_vec());
+
+        assert_eq!(
+            test_matrix.adjoint(),
+            Matrix::new(
+                3,
+                3,
+                [
+                    7.0,
+                    -4.0,
+                    -13.0,
+                    -5.0,
+                    3.0,
+                    9.0,
+                    0.0,
+                    0.0,
+                    1.0000000000000018
+                ]
+                .to_vec()
+            )
         );
     }
 }
