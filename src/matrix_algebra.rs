@@ -368,7 +368,7 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         Matrix {
             n: self.n,
             m: self.m,
-            entries: entries,
+            entries,
         }
     }
 
