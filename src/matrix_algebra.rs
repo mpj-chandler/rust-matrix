@@ -54,16 +54,16 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         Matrix { m, n, entries }
     }
 
-    pub fn new_constant_value(m: usize, n: usize, value: T) -> Self {
+    pub fn new_constant_value(m: usize, n: usize, value: T) -> Result<Self, &'static str> {
         if m == 0 || n == 0 {
-            panic!("Matrix dimensions must each be greater than zero!");
+            return Err("Matrix dimensions must each be greater than zero!");
         }
 
-        Matrix {
+        Ok(Matrix {
             n,
             m,
             entries: vec![value; n * m],
-        }
+        })
     }
 
     pub fn get_entry_ij(&self, i: usize, j: usize) -> &T {
