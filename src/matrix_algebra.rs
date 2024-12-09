@@ -684,15 +684,21 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
     fn test_zero_first_argument_to_initialiser() {
-        let _test_matrix = Matrix::new_constant_value(0, 1, 1);
+        let test_matrix = Matrix::new_constant_value(0, 1, 1);
+        assert_eq!(
+            test_matrix,
+            Err("Matrix dimensions must each be greater than zero!")
+        );
     }
 
     #[test]
-    #[should_panic]
     fn test_zero_second_argument_to_initialiser() {
-        let _test_matrix = Matrix::new_constant_value(1, 0, 1);
+        let test_matrix = Matrix::new_constant_value(1, 0, 1);
+        assert_eq!(
+            test_matrix,
+            Err("Matrix dimensions must each be greater than zero!")
+        );
     }
 
     #[test]
