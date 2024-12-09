@@ -1,14 +1,16 @@
 use std::fmt;
 use std::fmt::Display;
-use std::ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Sub};
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub};
 
 pub trait MatrixElementRequiredTraits<T>:
     Add<Output = T>
     + Sub<Output = T>
     + Mul<Output = T>
     + Div<Output = T>
+    + Add<Output = T>
     + AddAssign
     + MulAssign
+    + DivAssign
     + Clone
     + Copy
     + Display
@@ -24,8 +26,10 @@ impl<
             + Sub<Output = T>
             + Mul<Output = T>
             + Div<Output = T>
+            + Add<Output = T>
             + AddAssign
             + MulAssign
+            + DivAssign
             + Clone
             + Copy
             + Display
@@ -46,11 +50,11 @@ pub struct Matrix<T: MatrixElementRequiredTraits<T>> {
 }
 
 impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
-    pub fn new(m: usize, n: usize, entries: Vec<T>) -> Matrix<T> {
+    pub fn new(m: usize, n: usize, entries: Vec<T>) -> Self {
         Matrix { m, n, entries }
     }
 
-    pub fn new_constant_value(m: usize, n: usize, value: T) -> Matrix<T> {
+    pub fn new_constant_value(m: usize, n: usize, value: T) -> Self {
         if m == 0 || n == 0 {
             panic!("Matrix dimensions must each be greater than zero!");
         }
@@ -80,7 +84,7 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         rows
     }
 
-    pub fn row_interchange(&self, first_row_index: usize, second_row_index: usize) -> Matrix<T> {
+    pub fn row_interchange(&self, first_row_index: usize, second_row_index: usize) -> Self {
         let rows = self.rows();
         let first_row = &rows[first_row_index];
         let second_row = &rows[second_row_index];
@@ -110,7 +114,7 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         }
     }
 
-    pub fn multiply_row_by_scalar(&self, row_index: usize, scalar: T) -> Matrix<T> {
+    pub fn multiply_row_by_scalar(&self, row_index: usize, scalar: T) -> Self {
         let rows = self.rows();
         let row_to_be_multiplied = &rows[row_index];
 
@@ -140,7 +144,7 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         target_index: usize,
         source_index: usize,
         scalar: T,
-    ) -> Matrix<T> {
+    ) -> Self {
         let rows = self.rows();
         let row_to_be_added_to = rows[target_index].clone();
         let row_to_be_added: Vec<T> = rows[source_index]
@@ -197,7 +201,7 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         first_row_with_non_zero_entry
     }
 
-    fn reduce_rows_relative_to_row(&self, column_index: usize, row_index: usize) -> Matrix<T> {
+    fn reduce_rows_relative_to_row(&self, column_index: usize, row_index: usize) -> Self {
         let mut reduced = self.clone();
         for j in 0..self.m {
             if j != row_index {
@@ -212,7 +216,7 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         reduced
     }
 
-    fn reduce_first_row(&self, column_index: usize) -> (Matrix<T>, T) {
+    fn reduce_first_row(&self, column_index: usize) -> (Self, T) {
         let mut coefficient = T::from(1);
         let first_row_with_non_zero_entry =
             self.first_row_with_non_zero_entry_in_column(column_index);
@@ -225,7 +229,7 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         )
     }
 
-    fn row_echolon_form_recursive_with_coefficient(&self, k: usize) -> (Matrix<T>, T) {
+    fn row_echolon_form_recursive_with_coefficient(&self, k: usize) -> (Self, T) {
         let mut coefficient = T::from(1);
         let mut partitioned: Vec<Matrix<T>> = Vec::new();
 
@@ -264,15 +268,15 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         (reduced, coefficient)
     }
 
-    fn row_echolon_form_recursive(&self, k: usize) -> Matrix<T> {
+    fn row_echolon_form_recursive(&self, k: usize) -> Self {
         self.row_echolon_form_recursive_with_coefficient(k).0
     }
 
-    pub fn row_echolon_form(&self) -> Matrix<T> {
+    pub fn row_echolon_form(&self) -> Self {
         self.row_echolon_form_recursive(0)
     }
 
-    pub fn column_echolon_form(&self) -> Matrix<T> {
+    pub fn column_echolon_form(&self) -> Self {
         self.transpose().row_echolon_form().transpose()
     }
 
@@ -290,7 +294,7 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         columns
     }
 
-    pub fn transpose(&self) -> Matrix<T> {
+    pub fn transpose(&self) -> Self {
         let columns = self.columns();
         let mut transposed_entries = Vec::new();
 
@@ -342,7 +346,7 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         self.determinant() != T::default()
     }
 
-    pub fn matrix_of_cofactors(&self) -> Matrix<T> {
+    pub fn matrix_of_cofactors(&self) -> Self {
         let mut entries: Vec<T> = Vec::new();
         let mut sign = T::from(1);
         for j in 0..self.m {
@@ -372,7 +376,7 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         }
     }
 
-    pub fn adjoint(&self) -> Matrix<T> {
+    pub fn adjoint(&self) -> Self {
         self.matrix_of_cofactors().transpose()
     }
 
@@ -380,7 +384,7 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         &self,
         column_partitioning: &[usize],
         row_partitioning: &[usize],
-    ) -> Vec<Matrix<T>> {
+    ) -> Vec<Self> {
         let mut partitioned_matrices: Vec<Matrix<T>> = Vec::new();
         let mut row_offset = 0;
 
@@ -407,7 +411,7 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         partitioned_matrices
     }
 
-    pub fn submatrix(&self, column_indices: &[usize], row_indices: &[usize]) -> Matrix<T> {
+    pub fn submatrix(&self, column_indices: &[usize], row_indices: &[usize]) -> Self {
         let rows = self.rows();
         let mut new_entries: Vec<T> = Vec::new();
 
