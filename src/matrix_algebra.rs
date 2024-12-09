@@ -640,7 +640,8 @@ mod tests {
         let n = rng.gen_range(1..=100);
         let m = rng.gen_range(1..=100);
         let value = rng.gen_range(1..=100);
-        let test_matrix = Matrix::new_constant_value(m, n, value);
+        let test_matrix =
+            Matrix::new_constant_value(m, n, value).expect("Unable to create test_matrix");
 
         assert_eq!(test_matrix.entries.len(), n * m);
 
@@ -672,7 +673,8 @@ mod tests {
         let mut rng = rand::thread_rng();
         let n = rng.gen_range(1..=100);
         let m = rng.gen_range(1..=100);
-        let test_matrix = Matrix::new_constant_value(m, n, 0);
+        let test_matrix =
+            Matrix::new_constant_value(m, n, 0).expect("Unable to create test_matrix");
 
         assert_eq!(test_matrix.entries.len(), n * m);
 
@@ -696,8 +698,10 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_panic_on_non_multiplicatively_conformable_matrices() {
-        let test_matrix_a = Matrix::new_constant_value(3, 4, 5);
-        let test_matrix_b = Matrix::new_constant_value(5, 7, 4);
+        let test_matrix_a =
+            Matrix::new_constant_value(3, 4, 5).expect("Unable to create test_matrix_a");
+        let test_matrix_b =
+            Matrix::new_constant_value(5, 7, 4).expect("Unable to create test_matrix_b");
 
         let _ = test_matrix_a * test_matrix_b;
     }
@@ -705,8 +709,10 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_panic_on_non_additively_conformable_matrices() {
-        let test_matrix_a = Matrix::new_constant_value(3, 4, 5);
-        let test_matrix_b = Matrix::new_constant_value(5, 7, 4);
+        let test_matrix_a =
+            Matrix::new_constant_value(3, 4, 5).expect("Unable to create test_matrix_a");
+        let test_matrix_b =
+            Matrix::new_constant_value(5, 7, 4).expect("Unable to create test_matrix_b");
 
         let _ = test_matrix_a.add(test_matrix_b);
     }
@@ -792,8 +798,10 @@ mod tests {
 
     #[test]
     fn test_matrix_multiply_constant_value_initialiser() {
-        let test_matrix_a = Matrix::new_constant_value(3, 4, 5);
-        let test_matrix_b = Matrix::new_constant_value(4, 3, 4);
+        let test_matrix_a =
+            Matrix::new_constant_value(3, 4, 5).expect("Unable to create test_matrix_a");
+        let test_matrix_b =
+            Matrix::new_constant_value(4, 3, 4).expect("Unable to create test_matrix_b");
 
         let matrix_product = test_matrix_a * test_matrix_b;
 
