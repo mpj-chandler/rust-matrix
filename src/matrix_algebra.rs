@@ -311,9 +311,9 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         }
     }
 
-    pub fn determinant(&self) -> T {
+    pub fn determinant(&self) -> Result<T, &'static str> {
         if self.n != self.m {
-            panic!("Non square matrices do not have determinants!");
+            return Err("Non square matrices do not have determinants!");
         }
         let (row_echolon_form, coefficient) = self.row_echolon_form_recursive_with_coefficient(0);
         let mut determinant: Option<T> = None;
@@ -331,22 +331,29 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         }
 
         match determinant {
-            Some(det) => return det * coefficient,
-            None => panic!("Unable to calculate determinant!"),
+            Some(det) => return Ok(det * coefficient),
+            None => Err("Unable to calculate determinant!"),
         }
     }
 
-    pub fn minor(&self, column_indices: &[usize], row_indices: &[usize]) -> T {
+    pub fn minor(
+        &self,
+        column_indices: &[usize],
+        row_indices: &[usize],
+    ) -> Result<T, &'static str> {
         let submatrix = self.submatrix(column_indices, row_indices);
 
         submatrix.determinant()
     }
 
-    pub fn is_nonsingular(&self) -> bool {
-        self.determinant() != T::default()
+    pub fn is_nonsingular(&self) -> Result<bool, &'static str> {
+        match self.determinant() {
+            Err(error) => Err(error),
+            Ok(determinant) => Ok(determinant != T::default()),
+        }
     }
 
-    pub fn matrix_of_cofactors(&self) -> Self {
+    pub fn matrix_of_cofactors(&self) -> Result<Self, &'static str> {
         let mut entries: Vec<T> = Vec::new();
         let mut sign = T::from(1);
         for j in 0..self.m {
@@ -364,16 +371,21 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
                     }
                 }
                 let minor = self.minor(&column_indices, &row_indices);
-                entries.push(minor * sign);
-                sign = -sign;
+                match minor {
+                    Ok(minor) => {
+                        entries.push(minor * sign);
+                        sign = -sign;
+                    }
+                    Err(err) => return Err(err),
+                }
             }
         }
 
-        Matrix {
+        Ok(Matrix {
             n: self.n,
             m: self.m,
             entries,
-        }
+        })
     }
 
     pub fn adjoint(&self) -> Self {
