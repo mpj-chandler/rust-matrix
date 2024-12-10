@@ -388,8 +388,11 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         })
     }
 
-    pub fn adjoint(&self) -> Self {
-        self.matrix_of_cofactors().transpose()
+    pub fn adjoint(&self) -> Result<Self, &'static str> {
+        match self.matrix_of_cofactors() {
+            Ok(matrix_of_cofactors) => Ok(matrix_of_cofactors.transpose()),
+            Err(err) => Err(err),
+        }
     }
 
     pub fn partition(
@@ -620,31 +623,28 @@ fn first_non_zero_vec_index<T: MatrixElementRequiredTraits<T>>(input: &Vec<Vec<T
     first_nonzero_vec_index
 }
 
-fn index_of_first_non_zero_element_in_vec<T: MatrixElementRequiredTraits<T>>(
-    input: &Vec<T>,
-) -> usize {
-    let mut index_of_first_non_zero_element = 0;
-    for element in input {
-        if *element != T::default() {
-            return index_of_first_non_zero_element;
-        }
-        index_of_first_non_zero_element += 1;
-    }
-
-    index_of_first_non_zero_element
-}
-
 #[cfg(test)]
 mod tests {
     use rand::prelude::*;
     use std::ops::Add;
 
-    use crate::{
-        complex_number::ComplexNumber,
-        matrix_algebra::{first_non_zero_vec_index, index_of_first_non_zero_element_in_vec},
-    };
+    use crate::{complex_number::ComplexNumber, matrix_algebra::first_non_zero_vec_index};
 
-    use super::{new_all_default, new_identity_matrix, Matrix};
+    use super::{new_all_default, new_identity_matrix, Matrix, MatrixElementRequiredTraits};
+
+    fn index_of_first_non_zero_element_in_vec<T: MatrixElementRequiredTraits<T>>(
+        input: &Vec<T>,
+    ) -> usize {
+        let mut index_of_first_non_zero_element = 0;
+        for element in input {
+            if *element != T::default() {
+                return index_of_first_non_zero_element;
+            }
+            index_of_first_non_zero_element += 1;
+        }
+
+        index_of_first_non_zero_element
+    }
 
     #[test]
     fn test_constant_value_initialiser() {
@@ -1243,8 +1243,8 @@ mod tests {
             ]
             .to_vec(),
         );
-
-        assert_eq!(test_matrix.determinant(), 0.0);
+        let result = test_matrix.determinant();
+        assert_eq!(result.expect("Unable to calculate determinant"), 0.0);
 
         let test_matrix = Matrix::new(
             3,
@@ -1272,16 +1272,23 @@ mod tests {
         fn delta_complex(determinant: ComplexNumber<f64>, expectation: f64) -> bool {
             determinant.complex - expectation < (1.0 / 1000000000000000000000000000000.0)
         }
-        assert!(delta_real(determinant, 8.0));
-        assert!(delta_complex(determinant, 6.0));
+        assert!(delta_real(
+            determinant.expect("Unable to calculate determinant"),
+            8.0
+        ));
+        assert!(delta_complex(
+            determinant.expect("Unable to calculate determinant"),
+            6.0
+        ));
     }
 
     #[test]
-    #[should_panic]
     fn test_determinant_panic() {
         let test_matrix = new_all_default::<f64>(3, 2);
 
-        test_matrix.determinant();
+        let result = test_matrix.determinant();
+
+        assert_eq!(result, Err("Non square matrices do not have determinants!"));
     }
 
     #[test]
@@ -1289,7 +1296,9 @@ mod tests {
         let test_matrix = Matrix::new(3, 3, [3.0, 4.0, 3.0, 5.0, 7.0, 2.0, 0.0, 0.0, 1.0].to_vec());
 
         assert_eq!(
-            test_matrix.adjoint(),
+            test_matrix
+                .adjoint()
+                .expect("test_adjoint: unable to calculate matrix adjoint"),
             Matrix::new(
                 3,
                 3,

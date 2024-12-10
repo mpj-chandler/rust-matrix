@@ -1,6 +1,6 @@
 use std::{
     fmt::{self, Display},
-    ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, RemAssign, Sub},
+    ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub},
 };
 
 pub trait ComplexNumberRequiredTraits<T>:
