@@ -516,12 +516,15 @@ where
     }
 }
 
-fn matrix_add<T: MatrixElementRequiredTraits<T>>(a: &Matrix<T>, b: &Matrix<T>) -> Matrix<T>
+fn matrix_add<T: MatrixElementRequiredTraits<T>>(
+    a: &Matrix<T>,
+    b: &Matrix<T>,
+) -> Result<Matrix<T>, &'static str>
 where
     for<'a> &'a T: Add<Output = T>,
 {
     if !is_additively_conformable(a, b) {
-        panic!("Matrices are not additively conformable!")
+        return Err("Matrices are not additively conformable!");
     }
     let mut entries: Vec<T> = Vec::new();
 
@@ -532,11 +535,11 @@ where
         }
     }
 
-    Matrix::<T> {
+    Ok(Matrix::<T> {
         n: a.m,
         m: a.n,
         entries,
-    }
+    })
 }
 
 impl<T: MatrixElementRequiredTraits<T>> Add for Matrix<T>
@@ -546,7 +549,10 @@ where
     type Output = Self;
 
     fn add(self, other: Self) -> Self {
-        matrix_add(&self, &other)
+        match matrix_add(&self, &other) {
+            Ok(result) => return result,
+            Err(err) => panic!("{err}"),
+        }
     }
 }
 
@@ -554,7 +560,10 @@ impl<T: MatrixElementRequiredTraits<T>> Mul for Matrix<T> {
     type Output = Self;
 
     fn mul(self, rhs: Self) -> Self {
-        matrix_multiply::<T>(&self, &rhs)
+        match matrix_multiply::<T>(&self, &rhs) {
+            Err(err) => panic!("{err}"),
+            Ok(result) => result,
+        }
     }
 }
 
@@ -572,9 +581,12 @@ fn is_additively_conformable<T: MatrixElementRequiredTraits<T>>(
     a.n == b.n && a.m == b.m
 }
 
-fn matrix_multiply<T: MatrixElementRequiredTraits<T>>(a: &Matrix<T>, b: &Matrix<T>) -> Matrix<T> {
+fn matrix_multiply<T: MatrixElementRequiredTraits<T>>(
+    a: &Matrix<T>,
+    b: &Matrix<T>,
+) -> Result<Matrix<T>, &'static str> {
     if !is_multiplicatively_conformable(&a, &b) {
-        panic!("Matrices are not multiplicatively conformable!");
+        return Err("Matrices are not multiplicatively conformable!");
     }
     let mut entries: Vec<T> = Vec::new();
     let a_rows = a.rows();
@@ -582,12 +594,6 @@ fn matrix_multiply<T: MatrixElementRequiredTraits<T>>(a: &Matrix<T>, b: &Matrix<
 
     for i in 0..a_rows.len() {
         for j in 0..b_columns.len() {
-            if a_rows[i].len() != b_columns[j].len() {
-                panic!(
-                    "Row[{}]: Column[{}] length mismatch - cannot calculate matrix product!",
-                    i, j
-                );
-            }
             let mut new_entry: Option<T> = None;
             for k in 0..a_rows[i].len() {
                 match new_entry {
@@ -604,11 +610,11 @@ fn matrix_multiply<T: MatrixElementRequiredTraits<T>>(a: &Matrix<T>, b: &Matrix<
         }
     }
 
-    Matrix::<T> {
+    Ok(Matrix::<T> {
         m: a_rows.len(),
         n: b_columns.len(),
         entries,
-    }
+    })
 }
 
 fn first_non_zero_vec_index<T: MatrixElementRequiredTraits<T>>(input: &Vec<Vec<T>>) -> usize {
