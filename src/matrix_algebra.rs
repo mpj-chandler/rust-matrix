@@ -484,33 +484,36 @@ impl<T: MatrixElementRequiredTraits<T>> fmt::Display for Matrix<T> {
     }
 }
 
-pub fn new_all_default<T>(m: usize, n: usize) -> Matrix<T>
+pub fn new_all_default<T>(m: usize, n: usize) -> Result<Matrix<T>, &'static str>
 where
     T: MatrixElementRequiredTraits<T>,
 {
     if m == 0 || n == 0 {
-        panic!("Matrix dimensions must each be greater than zero!");
+        return Err("Matrix dimensions must each be greater than zero!");
     }
 
-    Matrix::<T> {
+    Ok(Matrix::<T> {
         n,
         m,
         entries: vec![T::default(); n * m],
-    }
+    })
 }
 
-pub fn new_identity_matrix<T>(dimension: usize) -> Matrix<T>
+pub fn new_identity_matrix<T>(dimension: usize) -> Result<Matrix<T>, &'static str>
 where
     T: MatrixElementRequiredTraits<T>,
 {
-    let mut new_empty_matrix = new_all_default::<T>(dimension, dimension);
+    let new_empty_matrix = new_all_default::<T>(dimension, dimension);
 
-    for index in 0..dimension {
-        new_empty_matrix.set_entry_ij(index, index, &T::from(1));
+    match new_empty_matrix {
+        Err(err) => return Err(err),
+        Ok(mut new_empty_matrix) => {
+            for index in 0..dimension {
+                new_empty_matrix.set_entry_ij(index, index, &T::from(1));
+            }
+            Ok(new_empty_matrix)
+        }
     }
-
-    println!("{new_empty_matrix}");
-    new_empty_matrix
 }
 
 fn matrix_add<T: MatrixElementRequiredTraits<T>>(a: &Matrix<T>, b: &Matrix<T>) -> Matrix<T>
@@ -847,13 +850,15 @@ mod tests {
         let mut rng = rand::thread_rng();
         let n = rng.gen_range(1..=100);
         let m = rng.gen_range(1..=100);
-        let test_matrix_f64 = new_all_default::<f64>(m, n);
+        let test_matrix_f64 = new_all_default::<f64>(m, n)
+            .expect("test_new_all_default: unable to create test_matrix_f64");
 
         for entry in test_matrix_f64.entries {
             assert_eq!(entry, f64::default());
         }
 
-        let test_matrix_i32 = new_all_default::<i32>(m, n);
+        let test_matrix_i32 = new_all_default::<i32>(m, n)
+            .expect("test_new_all_default: unable to create test_matrix_i32");
 
         for entry in test_matrix_i32.entries {
             assert_eq!(entry, i32::default());
@@ -865,13 +870,15 @@ mod tests {
         let mut rng = rand::thread_rng();
         let dimension = rng.gen_range(1..=100);
 
-        let test_matrix_i32 = new_identity_matrix::<i32>(dimension);
+        let test_matrix_i32 = new_identity_matrix::<i32>(dimension)
+            .expect("test_new_identity_matrix: unable to create test_matrix_i32");
 
         for index in 0..dimension {
             assert_eq!(*test_matrix_i32.get_entry_ij(index, index), 1);
         }
 
-        let test_matrix_f64 = new_identity_matrix::<f64>(dimension);
+        let test_matrix_f64 = new_identity_matrix::<f64>(dimension)
+            .expect("test_new_identity_matrix: unable to create test_matrix_f64");
 
         for index in 0..dimension {
             assert_eq!(*test_matrix_f64.get_entry_ij(index, index), 1.0);
@@ -898,7 +905,8 @@ mod tests {
 
     #[test]
     fn test_set_entry() {
-        let mut test_matrix = new_all_default::<f64>(5, 5);
+        let mut test_matrix =
+            new_all_default::<f64>(5, 5).expect("test_set_entry: unable to create test_matrix");
         let mut index = 1.0;
 
         for i in 0..5 {
@@ -1120,7 +1128,11 @@ mod tests {
 
         let result = test_matrix.row_echolon_form();
 
-        assert_eq!(result, new_identity_matrix(3));
+        assert_eq!(
+            result,
+            new_identity_matrix(3)
+                .expect("test_row_echolon_form: unable to create new_identity_matrix")
+        );
 
         let test_matrix = Matrix::new(
             3,
@@ -1283,8 +1295,9 @@ mod tests {
     }
 
     #[test]
-    fn test_determinant_panic() {
-        let test_matrix = new_all_default::<f64>(3, 2);
+    fn test_determinant_err() {
+        let test_matrix = new_all_default::<f64>(3, 2)
+            .expect("test_determinant_err: unable to create tesdt_matrix");
 
         let result = test_matrix.determinant();
 
