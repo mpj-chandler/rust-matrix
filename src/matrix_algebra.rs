@@ -1,14 +1,16 @@
 use std::fmt;
 use std::fmt::Display;
-use std::ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Sub};
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub};
 
 pub trait MatrixElementRequiredTraits<T>:
     Add<Output = T>
     + Sub<Output = T>
     + Mul<Output = T>
     + Div<Output = T>
+    + Add<Output = T>
     + AddAssign
     + MulAssign
+    + DivAssign
     + Clone
     + Copy
     + Display
@@ -24,8 +26,10 @@ impl<
             + Sub<Output = T>
             + Mul<Output = T>
             + Div<Output = T>
+            + Add<Output = T>
             + AddAssign
             + MulAssign
+            + DivAssign
             + Clone
             + Copy
             + Display
@@ -46,20 +50,20 @@ pub struct Matrix<T: MatrixElementRequiredTraits<T>> {
 }
 
 impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
-    pub fn new(m: usize, n: usize, entries: Vec<T>) -> Matrix<T> {
+    pub fn new(m: usize, n: usize, entries: Vec<T>) -> Self {
         Matrix { m, n, entries }
     }
 
-    pub fn new_constant_value(m: usize, n: usize, value: T) -> Matrix<T> {
+    pub fn new_constant_value(m: usize, n: usize, value: T) -> Result<Self, &'static str> {
         if m == 0 || n == 0 {
-            panic!("Matrix dimensions must each be greater than zero!");
+            return Err("Matrix dimensions must each be greater than zero!");
         }
 
-        Matrix {
+        Ok(Matrix {
             n,
             m,
             entries: vec![value; n * m],
-        }
+        })
     }
 
     pub fn get_entry_ij(&self, i: usize, j: usize) -> &T {
@@ -80,7 +84,7 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         rows
     }
 
-    pub fn row_interchange(&self, first_row_index: usize, second_row_index: usize) -> Matrix<T> {
+    pub fn row_interchange(&self, first_row_index: usize, second_row_index: usize) -> Self {
         let rows = self.rows();
         let first_row = &rows[first_row_index];
         let second_row = &rows[second_row_index];
@@ -110,7 +114,7 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         }
     }
 
-    pub fn multiply_row_by_scalar(&self, row_index: usize, scalar: T) -> Matrix<T> {
+    pub fn multiply_row_by_scalar(&self, row_index: usize, scalar: T) -> Self {
         let rows = self.rows();
         let row_to_be_multiplied = &rows[row_index];
 
@@ -140,7 +144,7 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         target_index: usize,
         source_index: usize,
         scalar: T,
-    ) -> Matrix<T> {
+    ) -> Self {
         let rows = self.rows();
         let row_to_be_added_to = rows[target_index].clone();
         let row_to_be_added: Vec<T> = rows[source_index]
@@ -197,7 +201,7 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         first_row_with_non_zero_entry
     }
 
-    fn reduce_rows_relative_to_row(&self, column_index: usize, row_index: usize) -> Matrix<T> {
+    fn reduce_rows_relative_to_row(&self, column_index: usize, row_index: usize) -> Self {
         let mut reduced = self.clone();
         for j in 0..self.m {
             if j != row_index {
@@ -212,7 +216,7 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         reduced
     }
 
-    fn reduce_first_row(&self, column_index: usize) -> (Matrix<T>, T) {
+    fn reduce_first_row(&self, column_index: usize) -> (Self, T) {
         let mut coefficient = T::from(1);
         let first_row_with_non_zero_entry =
             self.first_row_with_non_zero_entry_in_column(column_index);
@@ -225,7 +229,7 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         )
     }
 
-    fn row_echolon_form_recursive_with_coefficient(&self, k: usize) -> (Matrix<T>, T) {
+    fn row_echolon_form_recursive_with_coefficient(&self, k: usize) -> (Self, T) {
         let mut coefficient = T::from(1);
         let mut partitioned: Vec<Matrix<T>> = Vec::new();
 
@@ -264,15 +268,15 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         (reduced, coefficient)
     }
 
-    fn row_echolon_form_recursive(&self, k: usize) -> Matrix<T> {
+    fn row_echolon_form_recursive(&self, k: usize) -> Self {
         self.row_echolon_form_recursive_with_coefficient(k).0
     }
 
-    pub fn row_echolon_form(&self) -> Matrix<T> {
+    pub fn row_echolon_form(&self) -> Self {
         self.row_echolon_form_recursive(0)
     }
 
-    pub fn column_echolon_form(&self) -> Matrix<T> {
+    pub fn column_echolon_form(&self) -> Self {
         self.transpose().row_echolon_form().transpose()
     }
 
@@ -290,7 +294,7 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         columns
     }
 
-    pub fn transpose(&self) -> Matrix<T> {
+    pub fn transpose(&self) -> Self {
         let columns = self.columns();
         let mut transposed_entries = Vec::new();
 
@@ -307,9 +311,9 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         }
     }
 
-    pub fn determinant(&self) -> T {
+    pub fn determinant(&self) -> Result<T, &'static str> {
         if self.n != self.m {
-            panic!("Non square matrices do not have determinants!");
+            return Err("Non square matrices do not have determinants!");
         }
         let (row_echolon_form, coefficient) = self.row_echolon_form_recursive_with_coefficient(0);
         let mut determinant: Option<T> = None;
@@ -327,22 +331,29 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         }
 
         match determinant {
-            Some(det) => return det * coefficient,
-            None => panic!("Unable to calculate determinant!"),
+            Some(det) => return Ok(det * coefficient),
+            None => Err("Unable to calculate determinant!"),
         }
     }
 
-    pub fn minor(&self, column_indices: &[usize], row_indices: &[usize]) -> T {
+    pub fn minor(
+        &self,
+        column_indices: &[usize],
+        row_indices: &[usize],
+    ) -> Result<T, &'static str> {
         let submatrix = self.submatrix(column_indices, row_indices);
 
         submatrix.determinant()
     }
 
-    pub fn is_nonsingular(&self) -> bool {
-        self.determinant() != T::default()
+    pub fn is_nonsingular(&self) -> Result<bool, &'static str> {
+        match self.determinant() {
+            Err(error) => Err(error),
+            Ok(determinant) => Ok(determinant != T::default()),
+        }
     }
 
-    pub fn matrix_of_cofactors(&self) -> Matrix<T> {
+    pub fn matrix_of_cofactors(&self) -> Result<Self, &'static str> {
         let mut entries: Vec<T> = Vec::new();
         let mut sign = T::from(1);
         for j in 0..self.m {
@@ -360,27 +371,35 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
                     }
                 }
                 let minor = self.minor(&column_indices, &row_indices);
-                entries.push(minor * sign);
-                sign = -sign;
+                match minor {
+                    Ok(minor) => {
+                        entries.push(minor * sign);
+                        sign = -sign;
+                    }
+                    Err(err) => return Err(err),
+                }
             }
         }
 
-        Matrix {
+        Ok(Matrix {
             n: self.n,
             m: self.m,
             entries,
-        }
+        })
     }
 
-    pub fn adjoint(&self) -> Matrix<T> {
-        self.matrix_of_cofactors().transpose()
+    pub fn adjoint(&self) -> Result<Self, &'static str> {
+        match self.matrix_of_cofactors() {
+            Ok(matrix_of_cofactors) => Ok(matrix_of_cofactors.transpose()),
+            Err(err) => Err(err),
+        }
     }
 
     pub fn partition(
         &self,
         column_partitioning: &[usize],
         row_partitioning: &[usize],
-    ) -> Vec<Matrix<T>> {
+    ) -> Vec<Self> {
         let mut partitioned_matrices: Vec<Matrix<T>> = Vec::new();
         let mut row_offset = 0;
 
@@ -407,7 +426,7 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         partitioned_matrices
     }
 
-    pub fn submatrix(&self, column_indices: &[usize], row_indices: &[usize]) -> Matrix<T> {
+    pub fn submatrix(&self, column_indices: &[usize], row_indices: &[usize]) -> Self {
         let rows = self.rows();
         let mut new_entries: Vec<T> = Vec::new();
 
@@ -465,41 +484,47 @@ impl<T: MatrixElementRequiredTraits<T>> fmt::Display for Matrix<T> {
     }
 }
 
-pub fn new_all_default<T>(m: usize, n: usize) -> Matrix<T>
+pub fn new_all_default<T>(m: usize, n: usize) -> Result<Matrix<T>, &'static str>
 where
     T: MatrixElementRequiredTraits<T>,
 {
     if m == 0 || n == 0 {
-        panic!("Matrix dimensions must each be greater than zero!");
+        return Err("Matrix dimensions must each be greater than zero!");
     }
 
-    Matrix::<T> {
+    Ok(Matrix::<T> {
         n,
         m,
         entries: vec![T::default(); n * m],
-    }
+    })
 }
 
-pub fn new_identity_matrix<T>(dimension: usize) -> Matrix<T>
+pub fn new_identity_matrix<T>(dimension: usize) -> Result<Matrix<T>, &'static str>
 where
     T: MatrixElementRequiredTraits<T>,
 {
-    let mut new_empty_matrix = new_all_default::<T>(dimension, dimension);
+    let new_empty_matrix = new_all_default::<T>(dimension, dimension);
 
-    for index in 0..dimension {
-        new_empty_matrix.set_entry_ij(index, index, &T::from(1));
+    match new_empty_matrix {
+        Err(err) => return Err(err),
+        Ok(mut new_empty_matrix) => {
+            for index in 0..dimension {
+                new_empty_matrix.set_entry_ij(index, index, &T::from(1));
+            }
+            Ok(new_empty_matrix)
+        }
     }
-
-    println!("{new_empty_matrix}");
-    new_empty_matrix
 }
 
-fn matrix_add<T: MatrixElementRequiredTraits<T>>(a: &Matrix<T>, b: &Matrix<T>) -> Matrix<T>
+fn matrix_add<T: MatrixElementRequiredTraits<T>>(
+    a: &Matrix<T>,
+    b: &Matrix<T>,
+) -> Result<Matrix<T>, &'static str>
 where
     for<'a> &'a T: Add<Output = T>,
 {
     if !is_additively_conformable(a, b) {
-        panic!("Matrices are not additively conformable!")
+        return Err("Matrices are not additively conformable!");
     }
     let mut entries: Vec<T> = Vec::new();
 
@@ -510,11 +535,11 @@ where
         }
     }
 
-    Matrix::<T> {
+    Ok(Matrix::<T> {
         n: a.m,
         m: a.n,
         entries,
-    }
+    })
 }
 
 impl<T: MatrixElementRequiredTraits<T>> Add for Matrix<T>
@@ -524,7 +549,10 @@ where
     type Output = Self;
 
     fn add(self, other: Self) -> Self {
-        matrix_add(&self, &other)
+        match matrix_add(&self, &other) {
+            Ok(result) => return result,
+            Err(err) => panic!("{err}"),
+        }
     }
 }
 
@@ -532,7 +560,10 @@ impl<T: MatrixElementRequiredTraits<T>> Mul for Matrix<T> {
     type Output = Self;
 
     fn mul(self, rhs: Self) -> Self {
-        matrix_multiply::<T>(&self, &rhs)
+        match matrix_multiply::<T>(&self, &rhs) {
+            Err(err) => panic!("{err}"),
+            Ok(result) => result,
+        }
     }
 }
 
@@ -550,9 +581,12 @@ fn is_additively_conformable<T: MatrixElementRequiredTraits<T>>(
     a.n == b.n && a.m == b.m
 }
 
-fn matrix_multiply<T: MatrixElementRequiredTraits<T>>(a: &Matrix<T>, b: &Matrix<T>) -> Matrix<T> {
+fn matrix_multiply<T: MatrixElementRequiredTraits<T>>(
+    a: &Matrix<T>,
+    b: &Matrix<T>,
+) -> Result<Matrix<T>, &'static str> {
     if !is_multiplicatively_conformable(&a, &b) {
-        panic!("Matrices are not multiplicatively conformable!");
+        return Err("Matrices are not multiplicatively conformable!");
     }
     let mut entries: Vec<T> = Vec::new();
     let a_rows = a.rows();
@@ -560,12 +594,6 @@ fn matrix_multiply<T: MatrixElementRequiredTraits<T>>(a: &Matrix<T>, b: &Matrix<
 
     for i in 0..a_rows.len() {
         for j in 0..b_columns.len() {
-            if a_rows[i].len() != b_columns[j].len() {
-                panic!(
-                    "Row[{}]: Column[{}] length mismatch - cannot calculate matrix product!",
-                    i, j
-                );
-            }
             let mut new_entry: Option<T> = None;
             for k in 0..a_rows[i].len() {
                 match new_entry {
@@ -582,11 +610,11 @@ fn matrix_multiply<T: MatrixElementRequiredTraits<T>>(a: &Matrix<T>, b: &Matrix<
         }
     }
 
-    Matrix::<T> {
+    Ok(Matrix::<T> {
         m: a_rows.len(),
         n: b_columns.len(),
         entries,
-    }
+    })
 }
 
 fn first_non_zero_vec_index<T: MatrixElementRequiredTraits<T>>(input: &Vec<Vec<T>>) -> usize {
@@ -604,31 +632,28 @@ fn first_non_zero_vec_index<T: MatrixElementRequiredTraits<T>>(input: &Vec<Vec<T
     first_nonzero_vec_index
 }
 
-fn index_of_first_non_zero_element_in_vec<T: MatrixElementRequiredTraits<T>>(
-    input: &Vec<T>,
-) -> usize {
-    let mut index_of_first_non_zero_element = 0;
-    for element in input {
-        if *element != T::default() {
-            return index_of_first_non_zero_element;
-        }
-        index_of_first_non_zero_element += 1;
-    }
-
-    index_of_first_non_zero_element
-}
-
 #[cfg(test)]
 mod tests {
     use rand::prelude::*;
     use std::ops::Add;
 
-    use crate::{
-        complex_number::ComplexNumber,
-        matrix_algebra::{first_non_zero_vec_index, index_of_first_non_zero_element_in_vec},
-    };
+    use crate::{complex_number::ComplexNumber, matrix_algebra::first_non_zero_vec_index};
 
-    use super::{new_all_default, new_identity_matrix, Matrix};
+    use super::{new_all_default, new_identity_matrix, Matrix, MatrixElementRequiredTraits};
+
+    fn index_of_first_non_zero_element_in_vec<T: MatrixElementRequiredTraits<T>>(
+        input: &Vec<T>,
+    ) -> usize {
+        let mut index_of_first_non_zero_element = 0;
+        for element in input {
+            if *element != T::default() {
+                return index_of_first_non_zero_element;
+            }
+            index_of_first_non_zero_element += 1;
+        }
+
+        index_of_first_non_zero_element
+    }
 
     #[test]
     fn test_constant_value_initialiser() {
@@ -636,7 +661,8 @@ mod tests {
         let n = rng.gen_range(1..=100);
         let m = rng.gen_range(1..=100);
         let value = rng.gen_range(1..=100);
-        let test_matrix = Matrix::new_constant_value(m, n, value);
+        let test_matrix =
+            Matrix::new_constant_value(m, n, value).expect("Unable to create test_matrix");
 
         assert_eq!(test_matrix.entries.len(), n * m);
 
@@ -668,7 +694,8 @@ mod tests {
         let mut rng = rand::thread_rng();
         let n = rng.gen_range(1..=100);
         let m = rng.gen_range(1..=100);
-        let test_matrix = Matrix::new_constant_value(m, n, 0);
+        let test_matrix =
+            Matrix::new_constant_value(m, n, 0).expect("Unable to create test_matrix");
 
         assert_eq!(test_matrix.entries.len(), n * m);
 
@@ -678,22 +705,30 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
     fn test_zero_first_argument_to_initialiser() {
-        let _test_matrix = Matrix::new_constant_value(0, 1, 1);
+        let test_matrix = Matrix::new_constant_value(0, 1, 1);
+        assert_eq!(
+            test_matrix,
+            Err("Matrix dimensions must each be greater than zero!")
+        );
     }
 
     #[test]
-    #[should_panic]
     fn test_zero_second_argument_to_initialiser() {
-        let _test_matrix = Matrix::new_constant_value(1, 0, 1);
+        let test_matrix = Matrix::new_constant_value(1, 0, 1);
+        assert_eq!(
+            test_matrix,
+            Err("Matrix dimensions must each be greater than zero!")
+        );
     }
 
     #[test]
     #[should_panic]
     fn test_panic_on_non_multiplicatively_conformable_matrices() {
-        let test_matrix_a = Matrix::new_constant_value(3, 4, 5);
-        let test_matrix_b = Matrix::new_constant_value(5, 7, 4);
+        let test_matrix_a =
+            Matrix::new_constant_value(3, 4, 5).expect("Unable to create test_matrix_a");
+        let test_matrix_b =
+            Matrix::new_constant_value(5, 7, 4).expect("Unable to create test_matrix_b");
 
         let _ = test_matrix_a * test_matrix_b;
     }
@@ -701,8 +736,10 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_panic_on_non_additively_conformable_matrices() {
-        let test_matrix_a = Matrix::new_constant_value(3, 4, 5);
-        let test_matrix_b = Matrix::new_constant_value(5, 7, 4);
+        let test_matrix_a =
+            Matrix::new_constant_value(3, 4, 5).expect("Unable to create test_matrix_a");
+        let test_matrix_b =
+            Matrix::new_constant_value(5, 7, 4).expect("Unable to create test_matrix_b");
 
         let _ = test_matrix_a.add(test_matrix_b);
     }
@@ -788,8 +825,10 @@ mod tests {
 
     #[test]
     fn test_matrix_multiply_constant_value_initialiser() {
-        let test_matrix_a = Matrix::new_constant_value(3, 4, 5);
-        let test_matrix_b = Matrix::new_constant_value(4, 3, 4);
+        let test_matrix_a =
+            Matrix::new_constant_value(3, 4, 5).expect("Unable to create test_matrix_a");
+        let test_matrix_b =
+            Matrix::new_constant_value(4, 3, 4).expect("Unable to create test_matrix_b");
 
         let matrix_product = test_matrix_a * test_matrix_b;
 
@@ -817,13 +856,15 @@ mod tests {
         let mut rng = rand::thread_rng();
         let n = rng.gen_range(1..=100);
         let m = rng.gen_range(1..=100);
-        let test_matrix_f64 = new_all_default::<f64>(m, n);
+        let test_matrix_f64 = new_all_default::<f64>(m, n)
+            .expect("test_new_all_default: unable to create test_matrix_f64");
 
         for entry in test_matrix_f64.entries {
             assert_eq!(entry, f64::default());
         }
 
-        let test_matrix_i32 = new_all_default::<i32>(m, n);
+        let test_matrix_i32 = new_all_default::<i32>(m, n)
+            .expect("test_new_all_default: unable to create test_matrix_i32");
 
         for entry in test_matrix_i32.entries {
             assert_eq!(entry, i32::default());
@@ -835,13 +876,15 @@ mod tests {
         let mut rng = rand::thread_rng();
         let dimension = rng.gen_range(1..=100);
 
-        let test_matrix_i32 = new_identity_matrix::<i32>(dimension);
+        let test_matrix_i32 = new_identity_matrix::<i32>(dimension)
+            .expect("test_new_identity_matrix: unable to create test_matrix_i32");
 
         for index in 0..dimension {
             assert_eq!(*test_matrix_i32.get_entry_ij(index, index), 1);
         }
 
-        let test_matrix_f64 = new_identity_matrix::<f64>(dimension);
+        let test_matrix_f64 = new_identity_matrix::<f64>(dimension)
+            .expect("test_new_identity_matrix: unable to create test_matrix_f64");
 
         for index in 0..dimension {
             assert_eq!(*test_matrix_f64.get_entry_ij(index, index), 1.0);
@@ -868,7 +911,8 @@ mod tests {
 
     #[test]
     fn test_set_entry() {
-        let mut test_matrix = new_all_default::<f64>(5, 5);
+        let mut test_matrix =
+            new_all_default::<f64>(5, 5).expect("test_set_entry: unable to create test_matrix");
         let mut index = 1.0;
 
         for i in 0..5 {
@@ -1090,7 +1134,11 @@ mod tests {
 
         let result = test_matrix.row_echolon_form();
 
-        assert_eq!(result, new_identity_matrix(3));
+        assert_eq!(
+            result,
+            new_identity_matrix(3)
+                .expect("test_row_echolon_form: unable to create new_identity_matrix")
+        );
 
         let test_matrix = Matrix::new(
             3,
@@ -1213,8 +1261,8 @@ mod tests {
             ]
             .to_vec(),
         );
-
-        assert_eq!(test_matrix.determinant(), 0.0);
+        let result = test_matrix.determinant();
+        assert_eq!(result.expect("Unable to calculate determinant"), 0.0);
 
         let test_matrix = Matrix::new(
             3,
@@ -1242,16 +1290,24 @@ mod tests {
         fn delta_complex(determinant: ComplexNumber<f64>, expectation: f64) -> bool {
             determinant.complex - expectation < (1.0 / 1000000000000000000000000000000.0)
         }
-        assert!(delta_real(determinant, 8.0));
-        assert!(delta_complex(determinant, 6.0));
+        assert!(delta_real(
+            determinant.expect("Unable to calculate determinant"),
+            8.0
+        ));
+        assert!(delta_complex(
+            determinant.expect("Unable to calculate determinant"),
+            6.0
+        ));
     }
 
     #[test]
-    #[should_panic]
-    fn test_determinant_panic() {
-        let test_matrix = new_all_default::<f64>(3, 2);
+    fn test_determinant_err() {
+        let test_matrix = new_all_default::<f64>(3, 2)
+            .expect("test_determinant_err: unable to create tesdt_matrix");
 
-        test_matrix.determinant();
+        let result = test_matrix.determinant();
+
+        assert_eq!(result, Err("Non square matrices do not have determinants!"));
     }
 
     #[test]
@@ -1259,7 +1315,9 @@ mod tests {
         let test_matrix = Matrix::new(3, 3, [3.0, 4.0, 3.0, 5.0, 7.0, 2.0, 0.0, 0.0, 1.0].to_vec());
 
         assert_eq!(
-            test_matrix.adjoint(),
+            test_matrix
+                .adjoint()
+                .expect("test_adjoint: unable to calculate matrix adjoint"),
             Matrix::new(
                 3,
                 3,
