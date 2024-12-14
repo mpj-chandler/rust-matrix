@@ -1402,5 +1402,30 @@ mod tests {
         for i in 0..expected.len() {
             assert!(expected[i] - inverse.entries[i] < 1.0 / 1000000000000000.0);
         }
+
+        let test_matrix = Matrix::new(
+            5,
+            5,
+            [
+                1.0, 2.0, 1.0, 2.0, 3.0, 2.0, 3.0, 1.0, 0.0, 1.0, 2.0, 2.0, 1.0, 0.0, 0.0, 1.0,
+                1.0, 1.0, 1.0, 1.0, 0.0, -2.0, 0.0, 2.0, -2.0,
+            ]
+            .to_vec(),
+        );
+
+        assert_eq!(
+            test_matrix
+                .inverse()
+                .expect("Error computing inverse of test case 2 in test_inverse"),
+            Matrix::new(
+                5,
+                5,
+                [
+                    2.0, -4.0, 5.0, -3.0, -0.5, -1.0, 3.0, -3.0, 1.0, 0.5, -2.0, 2.0, -3.0, 4.0,
+                    0.0, 0.0, 1.0, -1.0, 0.0, 0.5, 1.0, -2.0, 2.0, -1.0, -0.5
+                ]
+                .to_vec()
+            )
+        );
     }
 }
