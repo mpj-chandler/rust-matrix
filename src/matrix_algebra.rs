@@ -1,3 +1,4 @@
+use std::convert::identity;
 use std::fmt;
 use std::fmt::Display;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub};
@@ -392,6 +393,39 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         match self.matrix_of_cofactors() {
             Ok(matrix_of_cofactors) => Ok(matrix_of_cofactors.transpose()),
             Err(err) => Err(err),
+        }
+    }
+
+    pub fn inverse(&self) -> Result<Self, &'static str> {
+        if self.n != self.m {
+            return Err("Unable to compute inverse when n is not equal to m");
+        }
+        let identity_matrix = new_identity_matrix::<T>(self.m);
+
+        match identity_matrix {
+            Ok(identity_matrix) => {
+                let identity_matrix_rows = identity_matrix.rows();
+                let rows = self.rows();
+
+                let mut new_entries = Vec::new();
+
+                for i in 0..rows.len() {
+                    for element in &rows[i] {
+                        new_entries.push(*element);
+                    }
+                    for element in &identity_matrix_rows[i] {
+                        new_entries.push(*element);
+                    }
+                }
+                let enlarged = Matrix::new(self.m, 2 * self.n, new_entries);
+                let enlarged_ref = enlarged.row_echolon_form();
+
+                return Ok(enlarged_ref.submatrix(
+                    &Vec::from_iter(self.n..(2 * self.n)).as_slice(),
+                    &Vec::from_iter(0..self.m).as_slice(),
+                ));
+            }
+            Err(err) => return Err(err),
         }
     }
 
@@ -1334,6 +1368,84 @@ mod tests {
                 ]
                 .to_vec()
             )
+        );
+    }
+
+    #[test]
+    fn test_inverse() {
+        let test_matrix = Matrix::new(
+            3,
+            3,
+            [2.0, 3.0, 0.0, 0.0, 3.0, -3.0, -2.0, 3.0, 3.0].to_vec(),
+        );
+
+        let inverse = test_matrix
+            .inverse()
+            .expect("Unable to compute matrix inverse in test_inverse");
+
+        assert_eq!(inverse.m, 3);
+        assert_eq!(inverse.n, 3);
+
+        let expected = [
+            1.0 / 3.0,
+            -1.0 / 6.0,
+            -1.0 / 6.0,
+            1.0 / 9.0,
+            1.0 / 9.0,
+            1.0 / 9.0,
+            1.0 / 9.0,
+            -2.0 / 9.0,
+            1.0 / 9.0,
+        ]
+        .to_vec();
+
+        for i in 0..expected.len() {
+            assert!(expected[i] - inverse.entries[i] < 1.0 / 1000000000000000.0);
+        }
+
+        let test_matrix = Matrix::new(
+            5,
+            5,
+            [
+                1.0, 2.0, 1.0, 2.0, 3.0, 2.0, 3.0, 1.0, 0.0, 1.0, 2.0, 2.0, 1.0, 0.0, 0.0, 1.0,
+                1.0, 1.0, 1.0, 1.0, 0.0, -2.0, 0.0, 2.0, -2.0,
+            ]
+            .to_vec(),
+        );
+
+        assert_eq!(
+            test_matrix
+                .inverse()
+                .expect("Error computing inverse of test case 2 in test_inverse"),
+            Matrix::new(
+                5,
+                5,
+                [
+                    2.0, -4.0, 5.0, -3.0, -0.5, -1.0, 3.0, -3.0, 1.0, 0.5, -2.0, 2.0, -3.0, 4.0,
+                    0.0, 0.0, 1.0, -1.0, 0.0, 0.5, 1.0, -2.0, 2.0, -1.0, -0.5
+                ]
+                .to_vec()
+            )
+        );
+    }
+
+    #[test]
+    fn test_inverse_err_case() {
+        let mut rng = rand::thread_rng();
+        let random_m = rng.gen_range(0..100);
+        let mut random_n: usize = random_m.clone();
+
+        while random_n == random_m {
+            random_n = rng.gen_range(0..100);
+        }
+
+        let test_matrix = new_all_default::<i32>(random_m, random_n);
+
+        assert_eq!(
+            test_matrix
+                .expect("Unable to construct new_all_default matrix in test_inverse_err_case")
+                .inverse(),
+            Err("Unable to compute inverse when n is not equal to m")
         );
     }
 }
