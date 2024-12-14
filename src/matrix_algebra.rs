@@ -50,6 +50,11 @@ pub struct Matrix<T: MatrixElementRequiredTraits<T>> {
     pub entries: Vec<T>,
 }
 
+pub struct QRDecomposition<T: MatrixElementRequiredTraits<T>> {
+    q: Matrix<T>,
+    r: Matrix<T>,
+}
+
 impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
     pub fn new(m: usize, n: usize, entries: Vec<T>) -> Self {
         Matrix { m, n, entries }
@@ -293,6 +298,26 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         }
 
         columns
+    }
+
+    pub fn qr_decomposition(&self) -> Result<QRDecomposition<T>, &'static str> {
+        let columns = self.columns();
+        let mut q_columns: Vec<Vec<T>> = Vec::new();
+
+        for i in 0..columns.len() {
+            if i == 0 {
+                let new_column = normalise_vector(&columns[i]);
+                match new_column {
+                    Ok(new_column) => q_columns.push(new_column),
+                    Err(err) => return Err(err),
+                };
+            }
+        }
+
+        Ok(QRDecomposition {
+            q: self.clone(),
+            r: self.clone(),
+        })
     }
 
     pub fn transpose(&self) -> Self {
@@ -664,6 +689,25 @@ fn first_non_zero_vec_index<T: MatrixElementRequiredTraits<T>>(input: &Vec<Vec<T
     }
 
     first_nonzero_vec_index
+}
+
+fn normalise_vector<T: MatrixElementRequiredTraits<T>>(
+    vector: &Vec<T>,
+) -> Result<Vec<T>, &'static str> {
+    let mut magnitude = T::default();
+
+    for element in vector {
+        magnitude += *element * *element;
+    }
+
+    if magnitude == T::default() {
+        return Err("Vector has zero magnitude");
+    }
+
+    Ok(vector
+        .into_iter()
+        .map(|element| *element / magnitude)
+        .collect::<Vec<T>>())
 }
 
 #[cfg(test)]
