@@ -1428,4 +1428,24 @@ mod tests {
             )
         );
     }
+
+    #[test]
+    fn test_inverse_err_case() {
+        let mut rng = rand::thread_rng();
+        let random_m = rng.gen_range(0..100);
+        let mut random_n: usize = random_m.clone();
+
+        while random_n == random_m {
+            random_n = rng.gen_range(0..100);
+        }
+
+        let test_matrix = new_all_default::<i32>(random_m, random_n);
+
+        assert_eq!(
+            test_matrix
+                .expect("Unable to construct new_all_default matrix in test_inverse_err_case")
+                .inverse(),
+            Err("Unable to compute inverse when n is not equal to m")
+        );
+    }
 }
