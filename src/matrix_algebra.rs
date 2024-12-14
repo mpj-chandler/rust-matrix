@@ -395,6 +395,10 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         }
     }
 
+    pub fn inverse(&self) -> Result<Self, &'static str> {
+        Ok(self.clone())
+    }
+
     pub fn partition(
         &self,
         column_partitioning: &[usize],
@@ -1335,5 +1339,36 @@ mod tests {
                 .to_vec()
             )
         );
+    }
+
+    #[test]
+    fn test_inverse() {
+        let test_matrix = Matrix::new(
+            3,
+            3,
+            [2.0, 3.0, 0.0, 0.0, 3.0, -3.0, -2.0, 3.0, 3.0].to_vec(),
+        );
+
+        assert_eq!(
+            test_matrix
+                .inverse()
+                .expect("Unable to compute matrix inverse in test_inverse"),
+            Matrix::new(
+                3,
+                3,
+                [
+                    1.0 / 3.0,
+                    -1.0 / 6.0,
+                    -1.0 / 6.0,
+                    1.0 / 9.0,
+                    1.0 / 9.0,
+                    1.0 / 9.0,
+                    1.0 / 9.0,
+                    -2.0 / 9.0,
+                    1.0 / 9.0
+                ]
+                .to_vec()
+            )
+        )
     }
 }
