@@ -717,7 +717,10 @@ fn normalize_vector<T: MatrixElementRequiredTraits<T>>(
         .collect::<Vec<T>>())
 }
 
-fn dot_product<T: MatrixElementRequiredTraits<T>>(a: Vec<T>, b: Vec<T>) -> Result<T, &'static str> {
+fn dot_product<T: MatrixElementRequiredTraits<T>>(
+    a: &Vec<T>,
+    b: &Vec<T>,
+) -> Result<T, &'static str> {
     if a.len() != b.len() {
         return Err("Vectors have different lengths, unable to compute dot_product");
     }
@@ -737,8 +740,30 @@ fn dot_product<T: MatrixElementRequiredTraits<T>>(a: Vec<T>, b: Vec<T>) -> Resul
     }
 }
 
-fn vector_projection<T: MatrixElementRequiredTraits<T>>(a: Vec<T>, b: Vec<T>) -> Vec<T> {
-    Vec::new()
+fn vector_projection<T: MatrixElementRequiredTraits<T>>(
+    a: &Vec<T>,
+    b: &Vec<T>,
+) -> Result<Vec<T>, &'static str> {
+    let scalar_numerator = dot_product(a, b);
+    let scalar_denominator = dot_product(b, b);
+
+    match (scalar_numerator, scalar_denominator) {
+        (Ok(scalar_numerator), Ok(scalar_denominator)) => {
+            let scalar_multiple = scalar_numerator / scalar_denominator;
+            let mut projection: Vec<T> = Vec::new();
+
+            for element in b {
+                projection.push(*element * scalar_multiple);
+            }
+
+            Ok(projection)
+        }
+        (Err(err), Ok(_)) => return Err(err),
+        (Ok(_), Err(err)) => return Err(err),
+        (Err(_), Err(_)) => {
+            return Err("Error generating dot products for projection");
+        }
+    }
 }
 
 fn vector_rejection<T: MatrixElementRequiredTraits<T>>(a: Vec<T>, u: Vec<T>) -> Vec<T> {
@@ -754,6 +779,7 @@ mod tests {
         complex_number::ComplexNumber,
         matrix_algebra::{
             dot_product, first_non_zero_vec_index, normalize_vector, vector_magnitude,
+            vector_projection,
         },
     };
 
@@ -1557,9 +1583,21 @@ mod tests {
         let test_vector_b = vec![6.0, 7.0, 8.0];
 
         assert_eq!(
-            dot_product(test_vector_a, test_vector_b)
+            dot_product(&test_vector_a, &test_vector_b)
                 .expect("Error calculating dot product in test_dot_product"),
             86.0
+        );
+    }
+
+    #[test]
+    fn test_vector_projection() {
+        let test_vector_a = vec![-1.0, 6.0, -2.0];
+        let test_vector_b = vec![2.0, -4.0, -4.0];
+
+        assert_eq!(
+            vector_projection(&test_vector_a, &test_vector_b)
+                .expect("Unable to calculate vector_projection in test_vector_projection"),
+            vec![-1.0, 2.0, 2.0]
         );
     }
 }
