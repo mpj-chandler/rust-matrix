@@ -306,11 +306,12 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
 
         for i in 0..columns.len() {
             if i == 0 {
-                let new_column = normalise_vector(&columns[i]);
+                let new_column = normalize_vector(&columns[i]);
                 match new_column {
                     Ok(new_column) => q_columns.push(new_column),
                     Err(err) => return Err(err),
                 };
+            } else {
             }
         }
 
@@ -691,14 +692,20 @@ fn first_non_zero_vec_index<T: MatrixElementRequiredTraits<T>>(input: &Vec<Vec<T
     first_nonzero_vec_index
 }
 
-fn normalise_vector<T: MatrixElementRequiredTraits<T>>(
-    vector: &Vec<T>,
-) -> Result<Vec<T>, &'static str> {
+fn vector_magnitude<T: MatrixElementRequiredTraits<T>>(vector: &Vec<T>) -> T {
     let mut magnitude = T::default();
 
     for element in vector {
         magnitude += *element * *element;
     }
+
+    magnitude
+}
+
+fn normalize_vector<T: MatrixElementRequiredTraits<T>>(
+    vector: &Vec<T>,
+) -> Result<Vec<T>, &'static str> {
+    let magnitude = vector_magnitude(vector);
 
     if magnitude == T::default() {
         return Err("Vector has zero magnitude");
@@ -710,12 +717,45 @@ fn normalise_vector<T: MatrixElementRequiredTraits<T>>(
         .collect::<Vec<T>>())
 }
 
+fn dot_product<T: MatrixElementRequiredTraits<T>>(a: Vec<T>, b: Vec<T>) -> Result<T, &'static str> {
+    if a.len() != b.len() {
+        return Err("Vectors have different lengths, unable to compute dot_product");
+    }
+
+    let mut accumulator: Option<T> = None;
+
+    for i in 0..a.len() {
+        match accumulator {
+            None => accumulator = Some(a[i] * b[i]),
+            Some(value) => accumulator = Some(value + a[i] * b[i]),
+        }
+    }
+
+    match accumulator {
+        Some(value) => Ok(value),
+        None => Err("Unable to calculate dot_product"),
+    }
+}
+
+fn vector_projection<T: MatrixElementRequiredTraits<T>>(a: Vec<T>, b: Vec<T>) -> Vec<T> {
+    Vec::new()
+}
+
+fn vector_rejection<T: MatrixElementRequiredTraits<T>>(a: Vec<T>, u: Vec<T>) -> Vec<T> {
+    Vec::new()
+}
+
 #[cfg(test)]
 mod tests {
     use rand::prelude::*;
     use std::ops::Add;
 
-    use crate::{complex_number::ComplexNumber, matrix_algebra::first_non_zero_vec_index};
+    use crate::{
+        complex_number::ComplexNumber,
+        matrix_algebra::{
+            dot_product, first_non_zero_vec_index, normalize_vector, vector_magnitude,
+        },
+    };
 
     use super::{new_all_default, new_identity_matrix, Matrix, MatrixElementRequiredTraits};
 
@@ -1490,6 +1530,36 @@ mod tests {
                 .expect("Unable to construct new_all_default matrix in test_inverse_err_case")
                 .inverse(),
             Err("Unable to compute inverse when n is not equal to m")
+        );
+    }
+
+    #[test]
+    fn test_vector_magnitude() {
+        let test_vector = vec![3.0, 4.0, 5.0];
+
+        assert_eq!(vector_magnitude(&test_vector), 50.0);
+    }
+
+    #[test]
+    fn test_normalize_vector() {
+        let test_vector = vec![3.0, 4.0, 5.0];
+
+        assert_eq!(
+            normalize_vector(&test_vector)
+                .expect("Unabled to normalize test_vector in test_normalize_vector"),
+            vec![3.0 / 50.0, 4.0 / 50.0, 5.0 / 50.0]
+        );
+    }
+
+    #[test]
+    fn test_dot_product() {
+        let test_vector_a = vec![3.0, 4.0, 5.0];
+        let test_vector_b = vec![6.0, 7.0, 8.0];
+
+        assert_eq!(
+            dot_product(test_vector_a, test_vector_b)
+                .expect("Error calculating dot product in test_dot_product"),
+            86.0
         );
     }
 }
