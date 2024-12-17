@@ -300,6 +300,10 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         columns
     }
 
+    pub fn q_matrix(&self) -> Result<Self, &'static str> {
+        Ok(self.clone())
+    }
+
     pub fn qr_decomposition(&self) -> Result<QRDecomposition<T>, &'static str> {
         let columns = self.columns();
         let mut q_columns: Vec<Vec<T>> = Vec::new();
@@ -1630,6 +1634,39 @@ mod tests {
             vector_rejection(&test_vector_a, &test_vector_b)
                 .expect("Unable to calculate vector_rejection in test_vector_projection"),
             vec![0.0, 4.0, -4.0]
+        );
+    }
+
+    #[test]
+    fn test_q_matrix() {
+        let test_matrix = Matrix::new(
+            3,
+            3,
+            [2.0, -1.0, -1.0, -4.0, 6.0, 3.0, -4.0, -2.0, 8.0].to_vec(),
+        );
+
+        let root_two = f64::powf(2.0, 0.5);
+
+        assert_eq!(
+            test_matrix
+                .q_matrix()
+                .expect("Unable to calculate q_matrix in test_q_matrix"),
+            Matrix::new(
+                3,
+                3,
+                [
+                    1.0 / 3.0,
+                    0.0,
+                    2.0 * (2.0 * root_two) / 3.0,
+                    -2.0 / 3.0,
+                    root_two / 2.0,
+                    root_two / 6.0,
+                    -2.0 / 3.0,
+                    -2.0 * root_two / 2.0,
+                    root_two / 6.0
+                ]
+                .to_vec()
+            )
         );
     }
 }
