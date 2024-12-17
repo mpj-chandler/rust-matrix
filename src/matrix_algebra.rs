@@ -749,6 +749,10 @@ fn vector_projection<T: MatrixElementRequiredTraits<T>>(
 
     match (scalar_numerator, scalar_denominator) {
         (Ok(scalar_numerator), Ok(scalar_denominator)) => {
+            if scalar_denominator == T::default() {
+                return Err("Zero denminator to scalar calculation");
+            }
+
             let scalar_multiple = scalar_numerator / scalar_denominator;
             let mut projection: Vec<T> = Vec::new();
 
@@ -766,8 +770,24 @@ fn vector_projection<T: MatrixElementRequiredTraits<T>>(
     }
 }
 
-fn vector_rejection<T: MatrixElementRequiredTraits<T>>(a: Vec<T>, u: Vec<T>) -> Vec<T> {
-    Vec::new()
+fn vector_rejection<T: MatrixElementRequiredTraits<T>>(
+    a: &Vec<T>,
+    u: &Vec<T>,
+) -> Result<Vec<T>, &'static str> {
+    let vector_projection = vector_projection(a, u);
+
+    match vector_projection {
+        Ok(vector_projection) => {
+            let mut rejection = Vec::new();
+
+            for i in 0..a.len() {
+                rejection.push(a[i] - vector_projection[i]);
+            }
+
+            Ok(rejection)
+        }
+        Err(err) => return Err(err),
+    }
 }
 
 #[cfg(test)]
@@ -779,7 +799,7 @@ mod tests {
         complex_number::ComplexNumber,
         matrix_algebra::{
             dot_product, first_non_zero_vec_index, normalize_vector, vector_magnitude,
-            vector_projection,
+            vector_projection, vector_rejection,
         },
     };
 
@@ -1598,6 +1618,18 @@ mod tests {
             vector_projection(&test_vector_a, &test_vector_b)
                 .expect("Unable to calculate vector_projection in test_vector_projection"),
             vec![-1.0, 2.0, 2.0]
+        );
+    }
+
+    #[test]
+    fn test_vector_rejection() {
+        let test_vector_a = vec![-1.0, 6.0, -2.0];
+        let test_vector_b = vec![2.0, -4.0, -4.0];
+
+        assert_eq!(
+            vector_rejection(&test_vector_a, &test_vector_b)
+                .expect("Unable to calculate vector_rejection in test_vector_projection"),
+            vec![0.0, 4.0, -4.0]
         );
     }
 }
