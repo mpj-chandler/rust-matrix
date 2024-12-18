@@ -1,4 +1,3 @@
-use std::convert::identity;
 use std::fmt;
 use std::fmt::Display;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub};
@@ -53,6 +52,10 @@ pub struct Matrix<T: MatrixElementRequiredTraits<T>> {
 pub struct QRDecomposition<T: MatrixElementRequiredTraits<T>> {
     q: Matrix<T>,
     r: Matrix<T>,
+}
+
+pub trait Powf<T> {
+    fn powf(&self, n: T);
 }
 
 impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
@@ -301,7 +304,82 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
     }
 
     pub fn q_matrix(&self) -> Result<Self, &'static str> {
-        Ok(self.clone())
+        let columns = self.columns();
+        let mut q_columns: Vec<Vec<T>> = Vec::new();
+
+        for i in 0..columns.len() {
+            if i == 0 {
+                columns[i]
+                    .clone()
+                    .into_iter()
+                    .for_each(|element| println!("{element}"));
+                let orthogonal_vector_0 = normalize_vector(&columns[i]);
+                match orthogonal_vector_0 {
+                    Ok(orthogonal_vector_0) => {
+                        println!("u0:");
+                        orthogonal_vector_0
+                            .clone()
+                            .into_iter()
+                            .for_each(|element| println!("{element}"));
+                        q_columns.push(orthogonal_vector_0);
+                    }
+                    Err(err) => return Err(err),
+                };
+            } else {
+                for j in 0..q_columns.len() {
+                    let mut accumulator = vec![T::default(); columns[i].len()];
+                    println!("{}", j);
+                    println!("Computing vector projection of a{i} with u{j}");
+                    columns[i]
+                        .clone()
+                        .into_iter()
+                        .for_each(|element| println!("{element}"));
+                    q_columns[j]
+                        .clone()
+                        .into_iter()
+                        .for_each(|element| println!("{element}"));
+                    let vector_projection = vector_projection(&columns[i], &q_columns[j]);
+
+                    match vector_projection {
+                        Ok(vector_projection) => {
+                            for index in 0..columns[i].len() {
+                                accumulator[index] = accumulator[index] - vector_projection[index];
+                            }
+                        }
+                        Err(err) => return Err(err),
+                    }
+
+                    let mut orthogonal_vector_i = vec![T::default(); columns[i].len()];
+                    for index in 0..orthogonal_vector_i.len() {
+                        orthogonal_vector_i[index] = columns[i][index] - accumulator[index];
+                    }
+
+                    let orthogonal_vector_i_normalized = normalize_vector(&orthogonal_vector_i);
+                    match orthogonal_vector_i_normalized {
+                        Ok(orthogonal_vector_i_normalized) => {
+                            q_columns.push(orthogonal_vector_i_normalized)
+                        }
+                        Err(err) => return Err(err),
+                    }
+                }
+            }
+        }
+        let mut q_entries = Vec::new();
+
+        for j in 0..self.m {
+            for column in &q_columns {
+                column.clone().into_iter().for_each(|element| {
+                    println!("{}", element);
+                });
+                q_entries.push(column[j])
+            }
+        }
+
+        Ok(Matrix {
+            m: self.m,
+            n: self.n,
+            entries: q_entries,
+        })
     }
 
     pub fn qr_decomposition(&self) -> Result<QRDecomposition<T>, &'static str> {
@@ -744,7 +822,7 @@ fn dot_product<T: MatrixElementRequiredTraits<T>>(
     }
 }
 
-fn vector_projection<T: MatrixElementRequiredTraits<T>>(
+fn vector_projection<T: MatrixElementRequiredTraits<T> + Powf<T>>(
     a: &Vec<T>,
     b: &Vec<T>,
 ) -> Result<Vec<T>, &'static str> {
@@ -774,7 +852,7 @@ fn vector_projection<T: MatrixElementRequiredTraits<T>>(
     }
 }
 
-fn vector_rejection<T: MatrixElementRequiredTraits<T>>(
+fn vector_rejection<T: MatrixElementRequiredTraits<T> + Powf<T>>(
     a: &Vec<T>,
     u: &Vec<T>,
 ) -> Result<Vec<T>, &'static str> {
