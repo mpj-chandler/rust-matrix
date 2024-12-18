@@ -1,7 +1,24 @@
-use std::convert::identity;
 use std::fmt;
 use std::fmt::Display;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub};
+
+pub trait Sqrt {
+    fn sqrt(&self) -> Self;
+}
+
+macro_rules! impl_sqrt {
+    ( $($ty:ty),* ) => {
+        $(
+            impl Sqrt for $ty {
+                fn sqrt(&self) -> Self {
+                    self.sqrt()
+                }
+            }
+        )*
+    };
+}
+
+impl_sqrt!(f64, f32);
 
 pub trait MatrixElementRequiredTraits<T>:
     Add<Output = T>
@@ -18,6 +35,7 @@ pub trait MatrixElementRequiredTraits<T>:
     + PartialOrd<T>
     + Neg<Output = T>
     + Default
+    + Sqrt
     + From<u8>
 {
 }
@@ -37,6 +55,7 @@ impl<
             + PartialOrd<T>
             + Neg<Output = T>
             + Default
+            + Sqrt
             + From<u8>
             + ?Sized,
     > MatrixElementRequiredTraits<T> for T
@@ -669,7 +688,6 @@ fn first_non_zero_vec_index<T: MatrixElementRequiredTraits<T>>(input: &Vec<Vec<T
 #[cfg(test)]
 mod tests {
     use rand::prelude::*;
-    use std::ops::Add;
 
     use crate::{complex_number::ComplexNumber, matrix_algebra::first_non_zero_vec_index};
 
@@ -694,7 +712,7 @@ mod tests {
         let mut rng = rand::thread_rng();
         let n = rng.gen_range(1..=100);
         let m = rng.gen_range(1..=100);
-        let value = rng.gen_range(1..=100);
+        let value: f64 = rng.gen_range(1.0..=100.0);
         let test_matrix =
             Matrix::new_constant_value(m, n, value).expect("Unable to create test_matrix");
 
@@ -710,11 +728,11 @@ mod tests {
         let mut rng = rand::thread_rng();
         let n = rng.gen_range(1..=100);
         let m = rng.gen_range(1..=100);
-        let mut entries: Vec<i32> = Vec::new();
+        let mut entries: Vec<f32> = Vec::new();
 
         for _i in 0..m {
             for _j in 0..n {
-                entries.push(rng.gen_range(1..=100));
+                entries.push(rng.gen_range(1.0..=100.0));
             }
         }
 
@@ -729,18 +747,18 @@ mod tests {
         let n = rng.gen_range(1..=100);
         let m = rng.gen_range(1..=100);
         let test_matrix =
-            Matrix::new_constant_value(m, n, 0).expect("Unable to create test_matrix");
+            Matrix::new_constant_value(m, n, 0.0).expect("Unable to create test_matrix");
 
         assert_eq!(test_matrix.entries.len(), n * m);
 
         for entry in test_matrix.entries {
-            assert_eq!(entry, 0);
+            assert_eq!(entry, 0.0);
         }
     }
 
     #[test]
     fn test_zero_first_argument_to_initialiser() {
-        let test_matrix = Matrix::new_constant_value(0, 1, 1);
+        let test_matrix = Matrix::new_constant_value(0, 1, 1.0);
         assert_eq!(
             test_matrix,
             Err("Matrix dimensions must each be greater than zero!")
@@ -749,7 +767,7 @@ mod tests {
 
     #[test]
     fn test_zero_second_argument_to_initialiser() {
-        let test_matrix = Matrix::new_constant_value(1, 0, 1);
+        let test_matrix = Matrix::new_constant_value(1, 0, 1.0);
         assert_eq!(
             test_matrix,
             Err("Matrix dimensions must each be greater than zero!")
@@ -760,9 +778,9 @@ mod tests {
     #[should_panic]
     fn test_panic_on_non_multiplicatively_conformable_matrices() {
         let test_matrix_a =
-            Matrix::new_constant_value(3, 4, 5).expect("Unable to create test_matrix_a");
+            Matrix::new_constant_value(3, 4, 5.0).expect("Unable to create test_matrix_a");
         let test_matrix_b =
-            Matrix::new_constant_value(5, 7, 4).expect("Unable to create test_matrix_b");
+            Matrix::new_constant_value(5, 7, 4.0).expect("Unable to create test_matrix_b");
 
         let _ = test_matrix_a * test_matrix_b;
     }
@@ -771,71 +789,127 @@ mod tests {
     #[should_panic]
     fn test_panic_on_non_additively_conformable_matrices() {
         let test_matrix_a =
-            Matrix::new_constant_value(3, 4, 5).expect("Unable to create test_matrix_a");
+            Matrix::new_constant_value(3, 4, 5.0).expect("Unable to create test_matrix_a");
         let test_matrix_b =
-            Matrix::new_constant_value(5, 7, 4).expect("Unable to create test_matrix_b");
+            Matrix::new_constant_value(5, 7, 4.0).expect("Unable to create test_matrix_b");
 
         let _ = test_matrix_a.add(test_matrix_b);
     }
 
     #[test]
     fn test_matrix_add() {
-        let test_matrix_a = Matrix::new(3, 4, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].to_vec());
-        let test_matrix_b = Matrix::new(3, 4, [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1].to_vec());
+        let test_matrix_a = Matrix::new(
+            3,
+            4,
+            [
+                1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0,
+            ]
+            .to_vec(),
+        );
+        let test_matrix_b = Matrix::new(
+            3,
+            4,
+            [
+                12.0, 11.0, 10.0, 9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0,
+            ]
+            .to_vec(),
+        );
 
         let matrix_sum = test_matrix_a + test_matrix_b;
 
         assert_eq!(matrix_sum.entries.len(), 12);
         assert_eq!(
             matrix_sum.entries,
-            [13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13]
+            [13.0, 13.0, 13.0, 13.0, 13.0, 13.0, 13.0, 13.0, 13.0, 13.0, 13.0, 13.0]
         );
     }
 
     #[test]
     fn test_matrix_add_operator() {
-        let test_matrix_a = Matrix::new(3, 4, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].to_vec());
-        let test_matrix_b = Matrix::new(3, 4, [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1].to_vec());
+        let test_matrix_a = Matrix::new(
+            3,
+            4,
+            [
+                1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0,
+            ]
+            .to_vec(),
+        );
+        let test_matrix_b = Matrix::new(
+            3,
+            4,
+            [
+                12.0, 11.0, 10.0, 9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0,
+            ]
+            .to_vec(),
+        );
         let matrix_sum = test_matrix_a + test_matrix_b;
 
         assert_eq!(matrix_sum.entries.len(), 12);
         assert_eq!(
             matrix_sum.entries,
-            [13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13,]
+            [13.0, 13.0, 13.0, 13.0, 13.0, 13.0, 13.0, 13.0, 13.0, 13.0, 13.0, 13.0,]
         );
     }
 
     #[test]
     fn test_columns() {
-        let test_matrix = Matrix::new(3, 4, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].to_vec());
+        let test_matrix = Matrix::new(
+            3,
+            4,
+            [
+                1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0,
+            ]
+            .to_vec(),
+        );
 
         let columns = test_matrix.columns();
 
         assert_eq!(columns.len(), 4);
 
-        assert_eq!(columns[0], vec![1, 5, 9]);
-        assert_eq!(columns[1], vec![2, 6, 10]);
-        assert_eq!(columns[2], vec![3, 7, 11]);
-        assert_eq!(columns[3], vec![4, 8, 12]);
+        assert_eq!(columns[0], vec![1.0, 5.0, 9.0]);
+        assert_eq!(columns[1], vec![2.0, 6.0, 10.0]);
+        assert_eq!(columns[2], vec![3.0, 7.0, 11.0]);
+        assert_eq!(columns[3], vec![4.0, 8.0, 12.0]);
     }
 
     #[test]
     fn test_rows() {
-        let test_matrix = Matrix::new(3, 4, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].to_vec());
+        let test_matrix = Matrix::new(
+            3,
+            4,
+            [
+                1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0,
+            ]
+            .to_vec(),
+        );
 
         let rows = test_matrix.rows();
 
         assert_eq!(rows.len(), 3);
 
-        assert_eq!(rows[0], vec![1, 2, 3, 4,]);
-        assert_eq!(rows[1], vec![5, 6, 7, 8,]);
-        assert_eq!(rows[2], vec![9, 10, 11, 12,]);
+        assert_eq!(rows[0], vec![1.0, 2.0, 3.0, 4.0,]);
+        assert_eq!(rows[1], vec![5.0, 6.0, 7.0, 8.0,]);
+        assert_eq!(rows[2], vec![9.0, 10.0, 11.0, 12.0,]);
     }
 
     #[test]
     fn test_matrix_multiply() {
-        let test_matrix_a = Matrix::new(3, 4, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].to_vec());
-        let test_matrix_b = Matrix::new(4, 3, [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1].to_vec());
+        let test_matrix_a = Matrix::new(
+            3,
+            4,
+            [
+                1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0,
+            ]
+            .to_vec(),
+        );
+        let test_matrix_b = Matrix::new(
+            4,
+            3,
+            [
+                12.0, 11.0, 10.0, 9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0,
+            ]
+            .to_vec(),
+        );
 
         let matrix_product = test_matrix_a * test_matrix_b;
 
@@ -844,15 +918,15 @@ mod tests {
         assert_eq!(
             matrix_product.entries,
             [
-                1 * 12 + 2 * 9 + 3 * 6 + 4 * 3,
-                1 * 11 + 2 * 8 + 3 * 5 + 4 * 2,
-                1 * 10 + 2 * 7 + 3 * 4 + 4 * 1,
-                5 * 12 + 6 * 9 + 7 * 6 + 8 * 3,
-                5 * 11 + 6 * 8 + 7 * 5 + 8 * 2,
-                5 * 10 + 6 * 7 + 7 * 4 + 8 * 1,
-                9 * 12 + 10 * 9 + 11 * 6 + 12 * 3,
-                9 * 11 + 10 * 8 + 11 * 5 + 12 * 2,
-                9 * 10 + 10 * 7 + 11 * 4 + 12 * 1
+                1.0 * 12.0 + 2.0 * 9.0 + 3.0 * 6.0 + 4.0 * 3.0,
+                1.0 * 11.0 + 2.0 * 8.0 + 3.0 * 5.0 + 4.0 * 2.0,
+                1.0 * 10.0 + 2.0 * 7.0 + 3.0 * 4.0 + 4.0 * 1.0,
+                5.0 * 12.0 + 6.0 * 9.0 + 7.0 * 6.0 + 8.0 * 3.0,
+                5.0 * 11.0 + 6.0 * 8.0 + 7.0 * 5.0 + 8.0 * 2.0,
+                5.0 * 10.0 + 6.0 * 7.0 + 7.0 * 4.0 + 8.0 * 1.0,
+                9.0 * 12.0 + 10.0 * 9.0 + 11.0 * 6.0 + 12.0 * 3.0,
+                9.0 * 11.0 + 10.0 * 8.0 + 11.0 * 5.0 + 12.0 * 2.0,
+                9.0 * 10.0 + 10.0 * 7.0 + 11.0 * 4.0 + 12.0 * 1.0
             ]
         );
     }
@@ -860,9 +934,9 @@ mod tests {
     #[test]
     fn test_matrix_multiply_constant_value_initialiser() {
         let test_matrix_a =
-            Matrix::new_constant_value(3, 4, 5).expect("Unable to create test_matrix_a");
+            Matrix::new_constant_value(3, 4, 5.0).expect("Unable to create test_matrix_a");
         let test_matrix_b =
-            Matrix::new_constant_value(4, 3, 4).expect("Unable to create test_matrix_b");
+            Matrix::new_constant_value(4, 3, 4.0).expect("Unable to create test_matrix_b");
 
         let matrix_product = test_matrix_a * test_matrix_b;
 
@@ -870,19 +944,19 @@ mod tests {
 
         assert_eq!(
             matrix_product.entries,
-            [80, 80, 80, 80, 80, 80, 80, 80, 80,]
+            [80.0, 80.0, 80.0, 80.0, 80.0, 80.0, 80.0, 80.0, 80.0,]
         );
     }
 
     #[test]
     fn test_transpose() {
-        let test_matrix = Matrix::new(2, 3, [1, 2, -1, 0, 3, 7].to_vec());
+        let test_matrix = Matrix::new(2, 3, [1.0, 2.0, -1.0, 0.0, 3.0, 7.0].to_vec());
 
         let transpose_matrix = test_matrix.transpose();
 
         assert_eq!(transpose_matrix.m, test_matrix.n);
         assert_eq!(transpose_matrix.n, test_matrix.m);
-        assert_eq!(transpose_matrix.entries, [1, 0, 2, 3, -1, 7]);
+        assert_eq!(transpose_matrix.entries, [1.0, 0.0, 2.0, 3.0, -1.0, 7.0]);
     }
 
     #[test]
@@ -897,11 +971,11 @@ mod tests {
             assert_eq!(entry, f64::default());
         }
 
-        let test_matrix_i32 = new_all_default::<i32>(m, n)
-            .expect("test_new_all_default: unable to create test_matrix_i32");
+        let test_matrix_f32 = new_all_default::<f32>(m, n)
+            .expect("test_new_all_default: unable to create test_matrix_f64");
 
-        for entry in test_matrix_i32.entries {
-            assert_eq!(entry, i32::default());
+        for entry in test_matrix_f32.entries {
+            assert_eq!(entry, f32::default());
         }
     }
 
@@ -910,18 +984,18 @@ mod tests {
         let mut rng = rand::thread_rng();
         let dimension = rng.gen_range(1..=100);
 
-        let test_matrix_i32 = new_identity_matrix::<i32>(dimension)
-            .expect("test_new_identity_matrix: unable to create test_matrix_i32");
-
-        for index in 0..dimension {
-            assert_eq!(*test_matrix_i32.get_entry_ij(index, index), 1);
-        }
-
         let test_matrix_f64 = new_identity_matrix::<f64>(dimension)
             .expect("test_new_identity_matrix: unable to create test_matrix_f64");
 
         for index in 0..dimension {
             assert_eq!(*test_matrix_f64.get_entry_ij(index, index), 1.0);
+        }
+
+        let test_matrix_f32 = new_identity_matrix::<f32>(dimension)
+            .expect("test_new_identity_matrix: unable to create test_matrix_f64");
+
+        for index in 0..dimension {
+            assert_eq!(*test_matrix_f32.get_entry_ij(index, index), 1.0);
         }
     }
 
@@ -1012,8 +1086,8 @@ mod tests {
             5,
             5,
             [
-                1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
-                24, 25,
+                1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0,
+                16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0,
             ]
             .to_vec(),
         );
@@ -1022,7 +1096,7 @@ mod tests {
 
         assert_eq!(submatrix.n, 2);
         assert_eq!(submatrix.m, 3);
-        assert_eq!(submatrix.entries, [2, 4, 12, 14, 22, 24]);
+        assert_eq!(submatrix.entries, [2.0, 4.0, 12.0, 14.0, 22.0, 24.0]);
     }
 
     #[test]
@@ -1439,7 +1513,7 @@ mod tests {
             random_n = rng.gen_range(0..100);
         }
 
-        let test_matrix = new_all_default::<i32>(random_m, random_n);
+        let test_matrix = new_all_default::<f64>(random_m, random_n);
 
         assert_eq!(
             test_matrix
