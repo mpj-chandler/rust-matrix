@@ -1,24 +1,8 @@
+use crate::pow::Pow;
+use crate::sqrt::Sqrt;
 use std::fmt;
 use std::fmt::Display;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub};
-
-pub trait Sqrt {
-    fn sqrt(&self) -> Self;
-}
-
-macro_rules! impl_sqrt {
-    ( $($ty:ty),* ) => {
-        $(
-            impl Sqrt for $ty {
-                fn sqrt(&self) -> Self {
-                    self.sqrt()
-                }
-            }
-        )*
-    };
-}
-
-impl_sqrt!(f64, f32);
 
 pub trait MatrixElementRequiredTraits<T>:
     Add<Output = T>
@@ -36,6 +20,7 @@ pub trait MatrixElementRequiredTraits<T>:
     + Neg<Output = T>
     + Default
     + Sqrt
+    + Pow
     + From<u8>
 {
 }
@@ -56,6 +41,7 @@ impl<
             + Neg<Output = T>
             + Default
             + Sqrt
+            + Pow
             + From<u8>
             + ?Sized,
     > MatrixElementRequiredTraits<T> for T
@@ -687,6 +673,8 @@ fn first_non_zero_vec_index<T: MatrixElementRequiredTraits<T>>(input: &Vec<Vec<T
 
 #[cfg(test)]
 mod tests {
+    use std::ops::Add;
+
     use rand::prelude::*;
 
     use crate::{complex_number::ComplexNumber, matrix_algebra::first_non_zero_vec_index};
@@ -1163,9 +1151,9 @@ mod tests {
     fn test_first_non_zero_vec_index() {
         let mut rng = rand::thread_rng();
         let random_index = rng.gen_range(0..12);
-        let mut test_vec: Vec<Vec<i32>> = vec![];
-        let zero_vec = [0, 0, 0].to_vec();
-        let non_zero_vec = [1, 2, 3].to_vec();
+        let mut test_vec: Vec<Vec<f64>> = vec![];
+        let zero_vec = [0.0, 0.0, 0.0].to_vec();
+        let non_zero_vec = [1.0, 2.0, 3.0].to_vec();
 
         for i in 0..12 {
             if i == random_index {
@@ -1182,13 +1170,13 @@ mod tests {
     fn test_index_of_first_non_zero_element_in_vec() {
         let mut rng = rand::thread_rng();
         let random_index = rng.gen_range(0..12);
-        let mut test_vec: Vec<i32> = vec![];
+        let mut test_vec: Vec<f64> = vec![];
 
         for i in 0..12 {
             if i == random_index {
-                test_vec.push(1);
+                test_vec.push(1.0);
             } else {
-                test_vec.push(0);
+                test_vec.push(0.0);
             }
         }
 
