@@ -67,7 +67,7 @@ impl<T: ComplexNumberRequiredTraits<T>> ComplexNumber<T> {
     }
 
     pub fn magnitude(&self) -> T {
-        (self.real * self.real) + (self.complex * self.complex).sqrt()
+        ((self.real * self.real) + (self.complex * self.complex)).square_root()
     }
 
     pub fn normalized(&self) -> Self {
@@ -76,11 +76,15 @@ impl<T: ComplexNumberRequiredTraits<T>> ComplexNumber<T> {
         ComplexNumber::new(self.real / magnitude, self.complex / magnitude)
     }
 
-    pub fn sqrt(&self) -> Self {
-        let r = self.magnitude();
-        let numerator = *self + ComplexNumber::new(r, T::default());
-
-        ComplexNumber::new(r.sqrt(), T::default()) * numerator.normalized()
+    pub fn square_root(&self) -> Self {
+        let magnitude = self.magnitude();
+        let real = ((magnitude + self.real) / 2.into()).square_root();
+        let complex = if self.complex < T::default() {
+            -((magnitude - self.real) / 2.into()).square_root()
+        } else {
+            ((magnitude - self.real) / 2.into()).square_root()
+        };
+        ComplexNumber::new(real, complex)
     }
 
     pub fn powf(&self, n: T) -> Self {
@@ -271,13 +275,13 @@ impl<T: ComplexNumberRequiredTraits<T>> fmt::Display for ComplexNumber<T> {
 }
 
 impl<T: ComplexNumberRequiredTraits<T>> Sqrt for ComplexNumber<T> {
-    fn sqrt(&self) -> Self {
-        self.sqrt()
+    fn square_root(&self) -> Self {
+        self.square_root()
     }
 }
 
 impl<T: ComplexNumberRequiredTraits<T>> Pow for ComplexNumber<T> {
-    fn powf(&self, n: ComplexNumber<T>) -> Self {
+    fn pow(&self, n: ComplexNumber<T>) -> Self {
         self.powf(n.real)
     }
 }
@@ -374,5 +378,12 @@ mod tests {
                     / (real_two * real_two + complex_two * complex_two),
             )
         );
+    }
+
+    #[test]
+    fn test_complex_number_sqrt() {
+        let complex = ComplexNumber::new(3.0, 4.0);
+
+        assert_eq!(complex.square_root(), ComplexNumber::new(2.0, 1.0));
     }
 }

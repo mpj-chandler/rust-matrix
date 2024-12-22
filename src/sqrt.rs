@@ -1,12 +1,12 @@
 pub trait Sqrt {
-    fn sqrt(&self) -> Self;
+    fn square_root(&self) -> Self;
 }
 
 macro_rules! impl_sqrt {
     ( $($ty:ty),* ) => {
         $(
             impl Sqrt for $ty {
-                fn sqrt(&self) -> Self {
+                fn square_root(&self) -> Self {
                     self.sqrt()
                 }
             }
