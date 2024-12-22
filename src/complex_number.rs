@@ -1,3 +1,4 @@
+use crate::{pow::Pow, sqrt::Sqrt};
 use std::{
     fmt::{self, Display},
     ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub},
@@ -18,6 +19,8 @@ pub trait ComplexNumberRequiredTraits<T>:
     + PartialOrd<T>
     + Neg<Output = T>
     + Default
+    + Sqrt
+    + Pow
     + From<u8>
 {
 }
@@ -37,6 +40,8 @@ impl<
             + PartialOrd<T>
             + Neg<Output = T>
             + Default
+            + Sqrt
+            + Pow
             + From<u8>
             + ?Sized,
     > ComplexNumberRequiredTraits<T> for T
@@ -58,6 +63,35 @@ impl<T: ComplexNumberRequiredTraits<T>> ComplexNumber<T> {
         ComplexNumber {
             real: self.real,
             complex: -self.complex,
+        }
+    }
+
+    pub fn magnitude(&self) -> T {
+        ((self.real * self.real) + (self.complex * self.complex)).square_root()
+    }
+
+    pub fn normalized(&self) -> Self {
+        let magnitude = self.magnitude();
+
+        ComplexNumber::new(self.real / magnitude, self.complex / magnitude)
+    }
+
+    pub fn square_root(&self) -> Self {
+        let magnitude = self.magnitude();
+        let real = ((magnitude + self.real) / 2.into()).square_root();
+        let complex = if self.complex < T::default() {
+            -((magnitude - self.real) / 2.into()).square_root()
+        } else {
+            ((magnitude - self.real) / 2.into()).square_root()
+        };
+        ComplexNumber::new(real, complex)
+    }
+
+    pub fn powf(&self, n: T) -> Self {
+        if n == T::default() {
+            return ComplexNumber::new(T::from(1), T::default());
+        } else {
+            *self * self.powf(n - T::from(1))
         }
     }
 }
@@ -240,6 +274,18 @@ impl<T: ComplexNumberRequiredTraits<T>> fmt::Display for ComplexNumber<T> {
     }
 }
 
+impl<T: ComplexNumberRequiredTraits<T>> Sqrt for ComplexNumber<T> {
+    fn square_root(&self) -> Self {
+        self.square_root()
+    }
+}
+
+impl<T: ComplexNumberRequiredTraits<T>> Pow for ComplexNumber<T> {
+    fn pow(&self, n: ComplexNumber<T>) -> Self {
+        self.powf(n.real)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::complex_number::ComplexNumber;
@@ -248,10 +294,10 @@ mod tests {
     #[test]
     fn test_complex_number_add() {
         let mut rng = rand::thread_rng();
-        let real_one = rng.gen_range(1..=100);
-        let complex_one = rng.gen_range(1..=100);
-        let real_two = rng.gen_range(1..=100);
-        let complex_two = rng.gen_range(1..=100);
+        let real_one = rng.gen_range(1.0..=100.0);
+        let complex_one = rng.gen_range(1.0..=100.0);
+        let real_two = rng.gen_range(1.0..=100.0);
+        let complex_two = rng.gen_range(1.0..=100.0);
 
         let lhs = ComplexNumber::new(real_one, complex_one);
         let rhs = ComplexNumber::new(real_two, complex_two);
@@ -265,10 +311,10 @@ mod tests {
     #[test]
     fn test_complex_number_sub() {
         let mut rng = rand::thread_rng();
-        let real_one = rng.gen_range(1..=100);
-        let complex_one = rng.gen_range(1..=100);
-        let real_two = rng.gen_range(1..=100);
-        let complex_two = rng.gen_range(1..=100);
+        let real_one = rng.gen_range(1.0..=100.0);
+        let complex_one = rng.gen_range(1.0..=100.0);
+        let real_two = rng.gen_range(1.0..=100.0);
+        let complex_two = rng.gen_range(1.0..=100.0);
 
         let lhs = ComplexNumber::new(real_one, complex_one);
         let rhs = ComplexNumber::new(real_two, complex_two);
@@ -282,10 +328,10 @@ mod tests {
     #[test]
     fn test_complex_number_multiply() {
         let mut rng = rand::thread_rng();
-        let real_one = rng.gen_range(1..=100);
-        let complex_one = rng.gen_range(1..=100);
-        let real_two = rng.gen_range(1..=100);
-        let complex_two = rng.gen_range(1..=100);
+        let real_one = rng.gen_range(1.0..=100.0);
+        let complex_one = rng.gen_range(1.0..=100.0);
+        let real_two = rng.gen_range(1.0..=100.0);
+        let complex_two = rng.gen_range(1.0..=100.0);
 
         let lhs = ComplexNumber::new(real_one, complex_one);
         let rhs = ComplexNumber::new(real_two, complex_two);
@@ -302,8 +348,8 @@ mod tests {
     #[test]
     fn test_complex_conjugate() {
         let mut rng = rand::thread_rng();
-        let real = rng.gen_range(1..=100);
-        let complex = rng.gen_range(1..=100);
+        let real = rng.gen_range(1.0..=100.0);
+        let complex = rng.gen_range(1.0..=100.0);
         let complex_number = ComplexNumber::new(real, complex);
 
         assert_eq!(
@@ -332,5 +378,12 @@ mod tests {
                     / (real_two * real_two + complex_two * complex_two),
             )
         );
+    }
+
+    #[test]
+    fn test_complex_number_sqrt() {
+        let complex = ComplexNumber::new(3.0, 4.0);
+
+        assert_eq!(complex.square_root(), ComplexNumber::new(2.0, 1.0));
     }
 }
