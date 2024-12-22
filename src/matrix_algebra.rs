@@ -367,24 +367,19 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
     }
 
     pub fn qr_decomposition(&self) -> Result<QRDecomposition<T>, &'static str> {
-        let columns = self.columns();
-        let mut q_columns: Vec<Vec<T>> = Vec::new();
+        let q_matrix = self.q_matrix();
 
-        for i in 0..columns.len() {
-            if i == 0 {
-                let new_column = normalize_vector(&columns[i]);
-                match new_column {
-                    Ok(new_column) => q_columns.push(new_column),
-                    Err(err) => return Err(err),
-                };
-            } else {
+        match q_matrix {
+            Ok(q_matrix) => {
+                let r_matrix = q_matrix.transpose() * self.clone();
+
+                Ok(QRDecomposition {
+                    q: q_matrix,
+                    r: r_matrix,
+                })
             }
+            Err(err) => return Err(err),
         }
-
-        Ok(QRDecomposition {
-            q: self.clone(),
-            r: self.clone(),
-        })
     }
 
     pub fn transpose(&self) -> Self {
@@ -1785,6 +1780,56 @@ mod tests {
 
         for i in 0..test_matrix.entries.len() {
             assert!(expected_entries[i] - test_matrix.entries[i] < 1.0 / 1000000000000000.0);
+        }
+    }
+
+    #[test]
+    fn test_qr_decomposition() {
+        let test_matrix = Matrix::new(
+            3,
+            3,
+            [2.0, -1.0, -2.0, -4.0, 6.0, 3.0, -4.0, -2.0, 8.0].to_vec(),
+        );
+
+        let root_two = f64::powf(2.0, 0.5);
+        let decomposition = test_matrix
+            .qr_decomposition()
+            .expect("Unable to calculate qr_decomposition in test_qr_decomposition");
+        assert_eq!(decomposition.q.m, 3);
+        assert_eq!(decomposition.q.n, 3);
+        let expected_q_entries = [
+            1.0 / 3.0,
+            0.0,
+            (2.0 * root_two) / 3.0,
+            -2.0 / 3.0,
+            root_two / 2.0,
+            root_two / 6.0,
+            -2.0 / 3.0,
+            -root_two / 2.0,
+            root_two / 6.0,
+        ]
+        .to_vec();
+        for i in 0..decomposition.q.entries.len() {
+            assert!(expected_q_entries[i] - decomposition.q.entries[i] < 1.0 / 1000000000000000.0);
+        }
+
+        assert_eq!(decomposition.r.m, 3);
+        assert_eq!(decomposition.r.n, 3);
+
+        let expected_r_entries = [
+            6.0,
+            -3.0,
+            -8.0,
+            0.0,
+            4.0 * root_two,
+            -2.5 * root_two,
+            0.0,
+            0.0,
+            0.5 * root_two,
+        ]
+        .to_vec();
+        for i in 0..decomposition.r.entries.len() {
+            assert!(expected_r_entries[i] - decomposition.r.entries[i] < 1.0 / 100000000000000.0);
         }
     }
 }
