@@ -382,6 +382,44 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         }
     }
 
+    fn sum_off_diagonal_entries(&self) -> T {
+        let mut sum = T::default();
+
+        for i in 0..self.n {
+            for j in 0..self.m {
+                if i == j {
+                    continue;
+                } else {
+                    sum += *self.get_entry_ij(i, j);
+                }
+            }
+        }
+
+        sum
+    }
+
+    pub fn schur_decomposition(&self) -> Result<Self, &'static str> {
+        let decomposition = self.qr_decomposition();
+
+        match decomposition {
+            Ok(decomposition) => {
+                let mut a_k_plus_one = decomposition.q.transpose() * self.clone() * decomposition.q;
+                while a_k_plus_one.sum_off_diagonal_entries().pow(2.into()) > T::default() {
+                    match a_k_plus_one.qr_decomposition() {
+                        Ok(decomposition) => {
+                            a_k_plus_one =
+                                decomposition.q.transpose() * a_k_plus_one * decomposition.q;
+                        }
+                        Err(err) => return Err(err),
+                    }
+                }
+                println!("{a_k_plus_one}");
+                Ok(a_k_plus_one)
+            }
+            Err(err) => Err(err),
+        }
+    }
+
     pub fn transpose(&self) -> Self {
         let columns = self.columns();
         let mut transposed_entries = Vec::new();
@@ -1830,6 +1868,36 @@ mod tests {
         .to_vec();
         for i in 0..decomposition.r.entries.len() {
             assert!(expected_r_entries[i] - decomposition.r.entries[i] < 1.0 / 100000000000000.0);
+        }
+    }
+
+    #[test]
+    fn test_schur_decomposition() {
+        let test_matrix = Matrix::new(
+            3,
+            3,
+            [2.0, -1.0, -2.0, -4.0, 6.0, 3.0, -4.0, -2.0, 8.0].to_vec(),
+        );
+
+        let decomposition = test_matrix
+            .schur_decomposition()
+            .expect("Unable to calculate qr_decomposition in test_qr_decomposition");
+        assert_eq!(decomposition.m, 3);
+        assert_eq!(decomposition.n, 3);
+        let expected_q_entries = [
+            1.0 / 3.0,
+            0.0,
+            2.0 / 3.0,
+            -2.0 / 3.0,
+            1.0 / 2.0,
+            1.0 / 6.0,
+            -2.0 / 3.0,
+            1.0 / 2.0,
+            1.0 / 6.0,
+        ]
+        .to_vec();
+        for i in 0..decomposition.entries.len() {
+            assert!(expected_q_entries[i] - decomposition.entries[i] < 1.0 / 1000000000000000.0);
         }
     }
 }
