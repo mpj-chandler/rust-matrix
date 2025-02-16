@@ -423,7 +423,6 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
     ///     ),
     /// );
     /// ```
-
     pub fn row_echolon_form(&self) -> Self {
         self.row_echolon_form_recursive(0)
     }
