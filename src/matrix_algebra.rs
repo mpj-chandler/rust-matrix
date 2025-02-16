@@ -135,6 +135,11 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         self.entries[(i * self.n) + j] = new_value.clone();
     }
 
+    /// Retrieves the rows of a matrix
+    /// ```
+    /// let mut test_matrix = Matrix::new(2, 3, [1.0, 2.0, -1.0, 0.0, 3.0, 7.0].to_vec());
+    /// let rows = test_matrix.rows();
+    /// ```
     pub fn rows(&self) -> Vec<Vec<T>> {
         let mut rows = Vec::new();
 
@@ -145,6 +150,19 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         rows
     }
 
+    /// The first elementary operation on a matrix
+    /// Returns a new matrix with the rows at the specified
+    /// indices interchanged.
+    /// ```
+    /// use matrix::matrix_algebra::Matrix;
+    /// let test_matrix = Matrix::new(2, 3, [1.0, 2.0, 3.0, 4.0, 5.0, 6.0].to_vec());
+    /// let result = test_matrix.row_interchange(0, 1);
+    ///
+    /// assert_eq!(
+    ///    result,
+    ///    Matrix::new(2, 3, [4.0, 5.0, 6.0, 1.0, 2.0, 3.0].to_vec()),
+    /// );
+    /// ```
     pub fn row_interchange(&self, first_row_index: usize, second_row_index: usize) -> Self {
         let rows = self.rows();
         let first_row = &rows[first_row_index];
@@ -175,6 +193,24 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         }
     }
 
+    /// The second elementary operation on a matrix
+    /// Returns a new matrix with all elements in the
+    ///  row at the specified index multiplied by the
+    /// specified scalar.
+    /// ```
+    /// use matrix::matrix_algebra::Matrix;
+    /// let test_matrix = Matrix::new(3, 3, [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0].to_vec());
+    /// let result = test_matrix.multiply_row_by_scalar(2, 2.0);
+    ///
+    /// assert_eq!(
+    ///    result,
+    ///    Matrix::new(
+    ///        3,
+    ///        3,
+    ///        [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 14.0, 16.0, 18.0].to_vec()
+    ///    ),
+    /// );
+    /// ```
     pub fn multiply_row_by_scalar(&self, row_index: usize, scalar: T) -> Self {
         let rows = self.rows();
         let row_to_be_multiplied = &rows[row_index];
@@ -200,6 +236,23 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         }
     }
 
+    /// The third elementary operation on a matrix
+    /// Adds a scalar multiple of a row to an existing row
+    /// in a matrix
+    /// ```
+    /// use matrix::matrix_algebra::Matrix;
+    /// let test_matrix = Matrix::new(3, 3, [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0].to_vec());
+    /// let result = test_matrix.add_row_to_scalar_multiple_of_row(0, 2, 5.0);
+    ///
+    /// assert_eq!(
+    ///     result,
+    ///     Matrix::new(
+    ///         3,
+    ///         3,
+    ///         [36.0, 42.0, 48.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0].to_vec()
+    ///     ),
+    /// );
+    /// ```
     pub fn add_row_to_scalar_multiple_of_row(
         &self,
         target_index: usize,
@@ -332,6 +385,44 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
     fn row_echolon_form_recursive(&self, k: usize) -> Self {
         self.row_echolon_form_recursive_with_coefficient(k).0
     }
+
+    /// Reduces a matrix to Row Echolon Form
+    /// ```
+    /// use matrix::matrix_algebra::Matrix;
+    /// let test_matrix = Matrix::new(
+    ///     3,
+    ///     4,
+    ///     [
+    ///         0.0, 0.0, 3.0, -1.0, 0.0, -1.0, 4.0, 7.0, 0.0, -1.0, 7.0, 6.0,
+    ///     ]
+    ///     .to_vec(),
+    /// );
+    ///
+    /// let result = test_matrix.row_echolon_form();
+    ///
+    /// assert_eq!(
+    ///     result,
+    ///     Matrix::new(
+    ///         3,
+    ///         4,
+    ///         [
+    ///             0.0,
+    ///             1.0,
+    ///             0.0,
+    ///             -25.0 / 3.0,
+    ///             0.0,
+    ///             0.0,
+    ///             1.0,
+    ///             -1.0 / 3.0,
+    ///             0.0,
+    ///             0.0,
+    ///             0.0,
+    ///             0.0
+    ///         ]
+    ///         .to_vec()
+    ///     ),
+    /// );
+    /// ```
 
     pub fn row_echolon_form(&self) -> Self {
         self.row_echolon_form_recursive(0)
