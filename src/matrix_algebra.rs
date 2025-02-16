@@ -56,10 +56,41 @@ pub struct Matrix<T: MatrixElementRequiredTraits<T>> {
 }
 
 impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
+    /// Standard initializer for a Matrix
+    /// Takes dimensions `m` (number of rows) and `n` (number of columns)
+    /// together with a vector representing the elements. The number of elements
+    /// should be equal to `m` x `n`
+    /// ```
+    /// use matrix::matrix_algebra::Matrix;
+    /// ```
+    /// Initialize the matrix as so:
+    /// ```
+    /// let test_matrix = Matrix::new(2, 3, [1.0, 2.0, -1.0, 0.0, 3.0, 7.0].to_vec());
+    /// ```
+    /// Matrix implements the Fmt trait:
+    /// ```
+    /// println!("{test_matrix}");
+    /// ```
+    /// Will output  
+    /// ⌜1    2    -1   ⌝  
+    /// ⌞0    3    7    ⌟
     pub fn new(m: usize, n: usize, entries: Vec<T>) -> Self {
         Matrix { m, n, entries }
     }
 
+    /// Convenience initializer to initialize a matrix of dimension m x n with all entries
+    /// equal to the provided value
+    /// ```
+    /// use matrix::matrix_algebra::Matrix;
+    /// ```
+    /// Initialize the matrix as so. Note the initializer returns a `Result<Self, &'static str>`
+    /// ```
+    /// let test_matrix = Matrix::new_constant_value(2, 3, 5.0).expect("Unable to initialize matrix");
+    /// println!("{test_matrix}");
+    ///
+    /// /// Will output  
+    /// /// ⌜5    5    5    ⌝  
+    /// /// ⌞5    5    5    ⌟
     pub fn new_constant_value(m: usize, n: usize, value: T) -> Result<Self, &'static str> {
         if m == 0 || n == 0 {
             return Err("Matrix dimensions must each be greater than zero!");
@@ -72,10 +103,34 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         })
     }
 
+    /// Getter for entry at position i,j (zero indexed)
+    /// Returns a reference to the entry
+    /// ```
+    /// let test_matrix = Matrix::new(2, 3, [1.0, 2.0, -1.0, 0.0, 3.0, 7.0].to_vec());
+    /// ```
+    /// Remember that i and j are zero indexed so this will get the 2nd row, 2nd column:
+    /// ```
+    /// let entry = test_matrix.get_entry_ij(1, 1);
+    /// println!("{entry}");
+    /// ```
+    /// Will output  
+    /// 3  
     pub fn get_entry_ij(&self, i: usize, j: usize) -> &T {
         &self.entries[(i * self.n) + j]
     }
 
+    /// Setter for entry at position i, j (zero indexed)
+    /// ```
+    /// let mut test_matrix = Matrix::new(2, 3, [1.0, 2.0, -1.0, 0.0, 3.0, 7.0].to_vec());
+    /// let entry = test_matrix.get_entry_ij(1, 1);
+    /// println!("{entry}");
+    /// test_matrix.set_entry_ij(1, 1, &4.0);
+    /// let entry = test_matrix.get_entry_ij(1, 1);
+    /// println!("{entry}");
+    /// ```
+    /// Will output:  
+    /// 3  
+    /// 4  
     pub fn set_entry_ij(&mut self, i: usize, j: usize, new_value: &T) {
         self.entries[(i * self.n) + j] = new_value.clone();
     }

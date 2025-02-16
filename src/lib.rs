@@ -11,7 +11,9 @@
 //! rounding issues.
 //!
 
+/// An implementation of `MatrixElementRequiredTraits<T>` for complex numbers
 pub mod complex_number;
+/// The core of the crate, contains the Matrix struct and all Matrix operations
 pub mod matrix_algebra;
 pub mod pow;
 pub mod sqrt;

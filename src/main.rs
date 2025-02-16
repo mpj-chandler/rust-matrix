@@ -1,9 +1,12 @@
 use matrix::{complex_number::ComplexNumber, matrix_algebra::Matrix};
 
 fn main() {
-    let test_matrix = Matrix::new(2, 3, [1.0, 2.0, -1.0, 0.0, 3.0, 7.0].to_vec());
-
-    println!("{test_matrix}");
+    let mut test_matrix = Matrix::new(2, 3, [1.0, 2.0, -1.0, 0.0, 3.0, 7.0].to_vec());
+    let entry = test_matrix.get_entry_ij(1, 1);
+    println!("{entry}");
+    test_matrix.set_entry_ij(1, 1, &4.0);
+    let entry = test_matrix.get_entry_ij(1, 1);
+    println!("{entry}");
 
     let test_matrix_a = Matrix::new(
         3,
