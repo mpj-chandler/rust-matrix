@@ -427,10 +427,50 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         self.row_echolon_form_recursive(0)
     }
 
+    /// Reduces a matrix to column echolon form
+    /// ```
+    /// use matrix::matrix_algebra::Matrix;
+    /// let test_matrix = Matrix::new(2, 3, [1.0, 2.0, 3.0, 2.0, 3.0, 4.0].to_vec());
+    /// let result = test_matrix.column_echolon_form();
+    ///
+    /// assert_eq!(
+    ///     result,
+    ///     Matrix::new(2, 3, [1.0, 0.0, 0.0, 0.0, 1.0, 0.0,].to_vec())
+    /// );
+    /// let test_matrix = Matrix::new(3, 3, [1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 3.0, 3.0, 3.0].to_vec());
+    /// let result = test_matrix.column_echolon_form();
+    /// assert_eq!(
+    ///     result,
+    ///     Matrix::new(3, 3, [1.0, 0.0, 0.0, 2.0, 0.0, 0.0, 3.0, 0.0, 0.0].to_vec())
+    /// );
+    /// ```
     pub fn column_echolon_form(&self) -> Self {
         self.transpose().row_echolon_form().transpose()
     }
 
+    /// Convenience function that extracts the columns
+    /// of a matrix
+    /// ```
+    /// use matrix::matrix_algebra::Matrix;
+    /// let test_matrix = Matrix::new(
+    /// 3,
+    /// 4,
+    /// [
+    ///    1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0,
+    /// ]
+    /// .to_vec(),
+    /// );
+    ///
+    /// let columns = test_matrix.columns();
+    ///
+    /// assert_eq!(columns.len(), 4);
+    ///
+    /// assert_eq!(columns[0], vec![1.0, 5.0, 9.0]);
+    /// assert_eq!(columns[1], vec![2.0, 6.0, 10.0]);
+    /// assert_eq!(columns[2], vec![3.0, 7.0, 11.0]);
+    /// assert_eq!(columns[3], vec![4.0, 8.0, 12.0]);
+    ///
+    /// ```
     pub fn columns(&self) -> Vec<Vec<T>> {
         let mut columns = Vec::new();
 
@@ -445,6 +485,17 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         columns
     }
 
+    /// Creates a transpose of a matrix
+    /// ```
+    /// use matrix::matrix_algebra::Matrix;
+    /// let test_matrix = Matrix::new(2, 3, [1.0, 2.0, -1.0, 0.0, 3.0, 7.0].to_vec());
+    ///
+    /// let transpose_matrix = test_matrix.transpose();
+    ///
+    /// assert_eq!(transpose_matrix.m, test_matrix.n);
+    /// assert_eq!(transpose_matrix.n, test_matrix.m);
+    /// assert_eq!(transpose_matrix.entries, [1.0, 0.0, 2.0, 3.0, -1.0, 7.0]);
+    /// ```
     pub fn transpose(&self) -> Self {
         let columns = self.columns();
         let mut transposed_entries = Vec::new();
@@ -462,6 +513,47 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         }
     }
 
+    /// Calculates the determinant of a matrix
+    /// The following example shows that there can
+    /// be some rounding issues with the calculations.
+    /// ```
+    /// use matrix::matrix_algebra::Matrix;
+    /// use matrix::complex_number::ComplexNumber;
+    /// let test_matrix = Matrix::new(
+    ///     3,
+    ///     3,
+    ///     [
+    ///         ComplexNumber::new(1.0, 0.0),
+    ///         ComplexNumber::new(1.0, 0.0),
+    ///         ComplexNumber::new(0.0, 1.0),
+    ///         ComplexNumber::new(1.0, 1.0),
+    ///         ComplexNumber::new(1.0, 1.0),
+    ///         ComplexNumber::new(1.0, 0.0),
+    ///         ComplexNumber::new(2.0, 3.0),
+    ///         ComplexNumber::new(0.0, -1.0),
+    ///         ComplexNumber::new(3.0, 0.0),
+    ///     ]
+    ///     .to_vec(),
+    /// );
+    ///
+    /// let determinant = test_matrix.determinant();
+    ///
+    /// fn delta_real(determinant: ComplexNumber<f64>, expectation: f64) -> bool {
+    ///     determinant.real - expectation < (1.0 / 1000000000000000000000000000000.0)
+    /// }
+    ///
+    /// fn delta_complex(determinant: ComplexNumber<f64>, expectation: f64) -> bool {
+    ///     determinant.complex - expectation < (1.0 / 1000000000000000000000000000000.0)
+    /// }
+    /// assert!(delta_real(
+    ///     determinant.expect("Unable to calculate determinant"),
+    ///     8.0
+    /// ));
+    /// assert!(delta_complex(
+    ///     determinant.expect("Unable to calculate determinant"),
+    ///     6.0
+    /// ));
+    /// ```
     pub fn determinant(&self) -> Result<T, &'static str> {
         if self.n != self.m {
             return Err("Non square matrices do not have determinants!");
@@ -487,6 +579,11 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         }
     }
 
+    /// Calculates the minor of a matrix (the determinant of
+    /// a given submatrix) based on the provided column indices
+    /// and row indices to be selected from the matrix
+    /// ```
+    /// ```
     pub fn minor(
         &self,
         column_indices: &[usize],
