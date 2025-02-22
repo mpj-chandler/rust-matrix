@@ -1,5 +1,5 @@
 [package]
-name = "matrix"
+name = "rust-matrix"
 version = "1.0.0-alpha"
 edition = "2021"
 description = "An implementation of foundational matrix operations for matrices containing <f32>, <f64> or complex numbers built from those types."
