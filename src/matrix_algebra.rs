@@ -577,6 +577,8 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
     /// use matrix::matrix_algebra::Matrix;
     /// let test_matrix = Matrix::new(3, 3, [1.0, 2.0, 1.0, 6.0, -1.0, 0.0, -1.0, -2.0, -1.0].to_vec());
     /// assert_eq!(test_matrix.minor(&[1, 2], &[1,2]).expect("Unable to create minor"), 1.0);
+    /// assert_eq!(test_matrix.minor(&[0, 2], &[1,2]).expect("Unable to create minor"), -6.0);
+    /// assert_eq!(test_matrix.minor(&[0, 1], &[0,1]).expect("Unable to create minor"), -13.0);
     /// ```
     pub fn minor(
         &self,
