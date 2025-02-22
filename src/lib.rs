@@ -8,7 +8,7 @@
 //!
 //! Users could, for instance make this library work for {integer} types,
 //! although there's not a huge amount of point as you would soon get into
-//! rounding issues.
+//! rounding issues, particular with required traits such as `Sqrt`
 //!
 
 /// An implementation of `MatrixElementRequiredTraits<T>` for complex numbers

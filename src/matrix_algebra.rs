@@ -62,13 +62,7 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
     /// should be equal to `m` x `n`
     /// ```
     /// use matrix::matrix_algebra::Matrix;
-    /// ```
-    /// Initialize the matrix as so:
-    /// ```
     /// let test_matrix = Matrix::new(2, 3, [1.0, 2.0, -1.0, 0.0, 3.0, 7.0].to_vec());
-    /// ```
-    /// Matrix implements the Fmt trait:
-    /// ```
     /// println!("{test_matrix}");
     /// ```
     /// Will output  
@@ -82,12 +76,9 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
     /// equal to the provided value
     /// ```
     /// use matrix::matrix_algebra::Matrix;
-    /// ```
-    /// Initialize the matrix as so. Note the initializer returns a `Result<Self, &'static str>`
-    /// ```
     /// let test_matrix = Matrix::new_constant_value(2, 3, 5.0).expect("Unable to initialize matrix");
     /// println!("{test_matrix}");
-    ///
+    /// ```
     /// /// Will output  
     /// /// ⌜5    5    5    ⌝  
     /// /// ⌞5    5    5    ⌟
@@ -106,10 +97,8 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
     /// Getter for entry at position i,j (zero indexed)
     /// Returns a reference to the entry
     /// ```
+    /// use matrix::matrix_algebra::Matrix;
     /// let test_matrix = Matrix::new(2, 3, [1.0, 2.0, -1.0, 0.0, 3.0, 7.0].to_vec());
-    /// ```
-    /// Remember that i and j are zero indexed so this will get the 2nd row, 2nd column:
-    /// ```
     /// let entry = test_matrix.get_entry_ij(1, 1);
     /// println!("{entry}");
     /// ```
@@ -121,6 +110,7 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
 
     /// Setter for entry at position i, j (zero indexed)
     /// ```
+    /// use matrix::matrix_algebra::Matrix;
     /// let mut test_matrix = Matrix::new(2, 3, [1.0, 2.0, -1.0, 0.0, 3.0, 7.0].to_vec());
     /// let entry = test_matrix.get_entry_ij(1, 1);
     /// println!("{entry}");
@@ -137,6 +127,7 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
 
     /// Retrieves the rows of a matrix
     /// ```
+    /// use matrix::matrix_algebra::Matrix;
     /// let mut test_matrix = Matrix::new(2, 3, [1.0, 2.0, -1.0, 0.0, 3.0, 7.0].to_vec());
     /// let rows = test_matrix.rows();
     /// ```
@@ -583,7 +574,9 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
     /// a given submatrix) based on the provided column indices
     /// and row indices to be selected from the matrix
     /// ```
-    /// NEED AN EXAMPLE
+    /// use matrix::matrix_algebra::Matrix;
+    /// let test_matrix = Matrix::new(3, 3, [1.0, 2.0, 1.0, 6.0, -1.0, 0.0, -1.0, -2.0, -1.0].to_vec());
+    /// assert_eq!(test_matrix.minor(&[1, 2], &[1,2]).expect("Unable to create minor"), 1.0);
     /// ```
     pub fn minor(
         &self,
@@ -1026,38 +1019,6 @@ where
 
 /// Implementation of the `Mul` trait for `Matrix<T>`
 /// Uses `matrix_multiply`
-impl<T: MatrixElementRequiredTraits<T>> Mul for Matrix<T> {
-    type Output = Self;
-
-    fn mul(self, rhs: Self) -> Self {
-        match matrix_multiply::<T>(&self, &rhs) {
-            Err(err) => panic!("{err}"),
-            Ok(result) => result,
-        }
-    }
-}
-
-/// Helper function to check that two matrices
-/// can be multiplied
-fn is_multiplicatively_conformable<T: MatrixElementRequiredTraits<T>>(
-    a: &Matrix<T>,
-    b: &Matrix<T>,
-) -> bool {
-    a.n == b.m
-}
-
-/// Helper function to check that two matrices
-/// can be summed
-fn is_additively_conformable<T: MatrixElementRequiredTraits<T>>(
-    a: &Matrix<T>,
-    b: &Matrix<T>,
-) -> bool {
-    a.n == b.n && a.m == b.m
-}
-
-/// Multiplication of two matrices
-/// This is currently a naive implementation with no
-/// optimisations.
 /// ```
 /// use matrix::matrix_algebra::Matrix;
 /// let test_matrix_a = Matrix::new(
@@ -1096,6 +1057,38 @@ fn is_additively_conformable<T: MatrixElementRequiredTraits<T>>(
 ///     ]
 /// );
 /// ```
+impl<T: MatrixElementRequiredTraits<T>> Mul for Matrix<T> {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self {
+        match matrix_multiply::<T>(&self, &rhs) {
+            Err(err) => panic!("{err}"),
+            Ok(result) => result,
+        }
+    }
+}
+
+/// Helper function to check that two matrices
+/// can be multiplied
+fn is_multiplicatively_conformable<T: MatrixElementRequiredTraits<T>>(
+    a: &Matrix<T>,
+    b: &Matrix<T>,
+) -> bool {
+    a.n == b.m
+}
+
+/// Helper function to check that two matrices
+/// can be summed
+fn is_additively_conformable<T: MatrixElementRequiredTraits<T>>(
+    a: &Matrix<T>,
+    b: &Matrix<T>,
+) -> bool {
+    a.n == b.n && a.m == b.m
+}
+
+/// Multiplication of two matrices
+/// This is currently a naive implementation with no
+/// optimisations.
 fn matrix_multiply<T: MatrixElementRequiredTraits<T>>(
     a: &Matrix<T>,
     b: &Matrix<T>,
