@@ -133,6 +133,8 @@ impl<T: ComplexNumberRequiredTraits<T>> ComplexNumber<T> {
         ComplexNumber::new(real, complex)
     }
 
+    /// Implementation of the Pow trait for ComplexNumber
+    ///
     pub fn powf(&self, n: T) -> Self {
         if n == T::default() {
             return ComplexNumber::new(T::from(1), T::default());
