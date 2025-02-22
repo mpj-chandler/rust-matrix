@@ -56,10 +56,32 @@ pub struct Matrix<T: MatrixElementRequiredTraits<T>> {
 }
 
 impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
+    /// Standard initializer for a Matrix
+    /// Takes dimensions `m` (number of rows) and `n` (number of columns)
+    /// together with a vector representing the elements. The number of elements
+    /// should be equal to `m` x `n`
+    /// ```
+    /// use matrix::matrix_algebra::Matrix;
+    /// let test_matrix = Matrix::new(2, 3, [1.0, 2.0, -1.0, 0.0, 3.0, 7.0].to_vec());
+    /// println!("{test_matrix}");
+    /// ```
+    /// Will output  
+    /// ⌜1    2    -1   ⌝  
+    /// ⌞0    3    7    ⌟
     pub fn new(m: usize, n: usize, entries: Vec<T>) -> Self {
         Matrix { m, n, entries }
     }
 
+    /// Convenience initializer to initialize a matrix of dimension m x n with all entries
+    /// equal to the provided value
+    /// ```
+    /// use matrix::matrix_algebra::Matrix;
+    /// let test_matrix = Matrix::new_constant_value(2, 3, 5.0).expect("Unable to initialize matrix");
+    /// println!("{test_matrix}");
+    /// ```
+    /// /// Will output  
+    /// /// ⌜5    5    5    ⌝  
+    /// /// ⌞5    5    5    ⌟
     pub fn new_constant_value(m: usize, n: usize, value: T) -> Result<Self, &'static str> {
         if m == 0 || n == 0 {
             return Err("Matrix dimensions must each be greater than zero!");
@@ -72,14 +94,43 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         })
     }
 
+    /// Getter for entry at position i,j (zero indexed)
+    /// Returns a reference to the entry
+    /// ```
+    /// use matrix::matrix_algebra::Matrix;
+    /// let test_matrix = Matrix::new(2, 3, [1.0, 2.0, -1.0, 0.0, 3.0, 7.0].to_vec());
+    /// let entry = test_matrix.get_entry_ij(1, 1);
+    /// println!("{entry}");
+    /// ```
+    /// Will output  
+    /// 3  
     pub fn get_entry_ij(&self, i: usize, j: usize) -> &T {
         &self.entries[(i * self.n) + j]
     }
 
+    /// Setter for entry at position i, j (zero indexed)
+    /// ```
+    /// use matrix::matrix_algebra::Matrix;
+    /// let mut test_matrix = Matrix::new(2, 3, [1.0, 2.0, -1.0, 0.0, 3.0, 7.0].to_vec());
+    /// let entry = test_matrix.get_entry_ij(1, 1);
+    /// println!("{entry}");
+    /// test_matrix.set_entry_ij(1, 1, &4.0);
+    /// let entry = test_matrix.get_entry_ij(1, 1);
+    /// println!("{entry}");
+    /// ```
+    /// Will output:  
+    /// 3  
+    /// 4  
     pub fn set_entry_ij(&mut self, i: usize, j: usize, new_value: &T) {
         self.entries[(i * self.n) + j] = new_value.clone();
     }
 
+    /// Retrieves the rows of a matrix
+    /// ```
+    /// use matrix::matrix_algebra::Matrix;
+    /// let mut test_matrix = Matrix::new(2, 3, [1.0, 2.0, -1.0, 0.0, 3.0, 7.0].to_vec());
+    /// let rows = test_matrix.rows();
+    /// ```
     pub fn rows(&self) -> Vec<Vec<T>> {
         let mut rows = Vec::new();
 
@@ -90,6 +141,19 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         rows
     }
 
+    /// The first elementary operation on a matrix
+    /// Returns a new matrix with the rows at the specified
+    /// indices interchanged.
+    /// ```
+    /// use matrix::matrix_algebra::Matrix;
+    /// let test_matrix = Matrix::new(2, 3, [1.0, 2.0, 3.0, 4.0, 5.0, 6.0].to_vec());
+    /// let result = test_matrix.row_interchange(0, 1);
+    ///
+    /// assert_eq!(
+    ///    result,
+    ///    Matrix::new(2, 3, [4.0, 5.0, 6.0, 1.0, 2.0, 3.0].to_vec()),
+    /// );
+    /// ```
     pub fn row_interchange(&self, first_row_index: usize, second_row_index: usize) -> Self {
         let rows = self.rows();
         let first_row = &rows[first_row_index];
@@ -120,6 +184,24 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         }
     }
 
+    /// The second elementary operation on a matrix
+    /// Returns a new matrix with all elements in the
+    ///  row at the specified index multiplied by the
+    /// specified scalar.
+    /// ```
+    /// use matrix::matrix_algebra::Matrix;
+    /// let test_matrix = Matrix::new(3, 3, [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0].to_vec());
+    /// let result = test_matrix.multiply_row_by_scalar(2, 2.0);
+    ///
+    /// assert_eq!(
+    ///    result,
+    ///    Matrix::new(
+    ///        3,
+    ///        3,
+    ///        [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 14.0, 16.0, 18.0].to_vec()
+    ///    ),
+    /// );
+    /// ```
     pub fn multiply_row_by_scalar(&self, row_index: usize, scalar: T) -> Self {
         let rows = self.rows();
         let row_to_be_multiplied = &rows[row_index];
@@ -145,6 +227,23 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         }
     }
 
+    /// The third elementary operation on a matrix
+    /// Adds a scalar multiple of a row to an existing row
+    /// in a matrix
+    /// ```
+    /// use matrix::matrix_algebra::Matrix;
+    /// let test_matrix = Matrix::new(3, 3, [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0].to_vec());
+    /// let result = test_matrix.add_row_to_scalar_multiple_of_row(0, 2, 5.0);
+    ///
+    /// assert_eq!(
+    ///     result,
+    ///     Matrix::new(
+    ///         3,
+    ///         3,
+    ///         [36.0, 42.0, 48.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0].to_vec()
+    ///     ),
+    /// );
+    /// ```
     pub fn add_row_to_scalar_multiple_of_row(
         &self,
         target_index: usize,
@@ -278,14 +377,91 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         self.row_echolon_form_recursive_with_coefficient(k).0
     }
 
+    /// Reduces a matrix to Row Echolon Form
+    /// ```
+    /// use matrix::matrix_algebra::Matrix;
+    /// let test_matrix = Matrix::new(
+    ///     3,
+    ///     4,
+    ///     [
+    ///         0.0, 0.0, 3.0, -1.0, 0.0, -1.0, 4.0, 7.0, 0.0, -1.0, 7.0, 6.0,
+    ///     ]
+    ///     .to_vec(),
+    /// );
+    ///
+    /// let result = test_matrix.row_echolon_form();
+    ///
+    /// assert_eq!(
+    ///     result,
+    ///     Matrix::new(
+    ///         3,
+    ///         4,
+    ///         [
+    ///             0.0,
+    ///             1.0,
+    ///             0.0,
+    ///             -25.0 / 3.0,
+    ///             0.0,
+    ///             0.0,
+    ///             1.0,
+    ///             -1.0 / 3.0,
+    ///             0.0,
+    ///             0.0,
+    ///             0.0,
+    ///             0.0
+    ///         ]
+    ///         .to_vec()
+    ///     ),
+    /// );
+    /// ```
     pub fn row_echolon_form(&self) -> Self {
         self.row_echolon_form_recursive(0)
     }
 
+    /// Reduces a matrix to column echolon form
+    /// ```
+    /// use matrix::matrix_algebra::Matrix;
+    /// let test_matrix = Matrix::new(2, 3, [1.0, 2.0, 3.0, 2.0, 3.0, 4.0].to_vec());
+    /// let result = test_matrix.column_echolon_form();
+    ///
+    /// assert_eq!(
+    ///     result,
+    ///     Matrix::new(2, 3, [1.0, 0.0, 0.0, 0.0, 1.0, 0.0,].to_vec())
+    /// );
+    /// let test_matrix = Matrix::new(3, 3, [1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 3.0, 3.0, 3.0].to_vec());
+    /// let result = test_matrix.column_echolon_form();
+    /// assert_eq!(
+    ///     result,
+    ///     Matrix::new(3, 3, [1.0, 0.0, 0.0, 2.0, 0.0, 0.0, 3.0, 0.0, 0.0].to_vec())
+    /// );
+    /// ```
     pub fn column_echolon_form(&self) -> Self {
         self.transpose().row_echolon_form().transpose()
     }
 
+    /// Convenience function that extracts the columns
+    /// of a matrix
+    /// ```
+    /// use matrix::matrix_algebra::Matrix;
+    /// let test_matrix = Matrix::new(
+    /// 3,
+    /// 4,
+    /// [
+    ///    1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0,
+    /// ]
+    /// .to_vec(),
+    /// );
+    ///
+    /// let columns = test_matrix.columns();
+    ///
+    /// assert_eq!(columns.len(), 4);
+    ///
+    /// assert_eq!(columns[0], vec![1.0, 5.0, 9.0]);
+    /// assert_eq!(columns[1], vec![2.0, 6.0, 10.0]);
+    /// assert_eq!(columns[2], vec![3.0, 7.0, 11.0]);
+    /// assert_eq!(columns[3], vec![4.0, 8.0, 12.0]);
+    ///
+    /// ```
     pub fn columns(&self) -> Vec<Vec<T>> {
         let mut columns = Vec::new();
 
@@ -300,6 +476,17 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         columns
     }
 
+    /// Creates a transpose of a matrix
+    /// ```
+    /// use matrix::matrix_algebra::Matrix;
+    /// let test_matrix = Matrix::new(2, 3, [1.0, 2.0, -1.0, 0.0, 3.0, 7.0].to_vec());
+    ///
+    /// let transpose_matrix = test_matrix.transpose();
+    ///
+    /// assert_eq!(transpose_matrix.m, test_matrix.n);
+    /// assert_eq!(transpose_matrix.n, test_matrix.m);
+    /// assert_eq!(transpose_matrix.entries, [1.0, 0.0, 2.0, 3.0, -1.0, 7.0]);
+    /// ```
     pub fn transpose(&self) -> Self {
         let columns = self.columns();
         let mut transposed_entries = Vec::new();
@@ -317,6 +504,47 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         }
     }
 
+    /// Calculates the determinant of a matrix
+    /// The following example shows that there can
+    /// be some rounding issues with the calculations.
+    /// ```
+    /// use matrix::matrix_algebra::Matrix;
+    /// use matrix::complex_number::ComplexNumber;
+    /// let test_matrix = Matrix::new(
+    ///     3,
+    ///     3,
+    ///     [
+    ///         ComplexNumber::new(1.0, 0.0),
+    ///         ComplexNumber::new(1.0, 0.0),
+    ///         ComplexNumber::new(0.0, 1.0),
+    ///         ComplexNumber::new(1.0, 1.0),
+    ///         ComplexNumber::new(1.0, 1.0),
+    ///         ComplexNumber::new(1.0, 0.0),
+    ///         ComplexNumber::new(2.0, 3.0),
+    ///         ComplexNumber::new(0.0, -1.0),
+    ///         ComplexNumber::new(3.0, 0.0),
+    ///     ]
+    ///     .to_vec(),
+    /// );
+    ///
+    /// let determinant = test_matrix.determinant();
+    ///
+    /// fn delta_real(determinant: ComplexNumber<f64>, expectation: f64) -> bool {
+    ///     determinant.real - expectation < (1.0 / 1000000000000000000000000000000.0)
+    /// }
+    ///
+    /// fn delta_complex(determinant: ComplexNumber<f64>, expectation: f64) -> bool {
+    ///     determinant.complex - expectation < (1.0 / 1000000000000000000000000000000.0)
+    /// }
+    /// assert!(delta_real(
+    ///     determinant.expect("Unable to calculate determinant"),
+    ///     8.0
+    /// ));
+    /// assert!(delta_complex(
+    ///     determinant.expect("Unable to calculate determinant"),
+    ///     6.0
+    /// ));
+    /// ```
     pub fn determinant(&self) -> Result<T, &'static str> {
         if self.n != self.m {
             return Err("Non square matrices do not have determinants!");
@@ -342,6 +570,16 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         }
     }
 
+    /// Calculates the minor of a matrix (the determinant of
+    /// a given submatrix) based on the provided column indices
+    /// and row indices to be selected from the matrix
+    /// ```
+    /// use matrix::matrix_algebra::Matrix;
+    /// let test_matrix = Matrix::new(3, 3, [1.0, 2.0, 1.0, 6.0, -1.0, 0.0, -1.0, -2.0, -1.0].to_vec());
+    /// assert_eq!(test_matrix.minor(&[1, 2], &[1,2]).expect("Unable to create minor"), 1.0);
+    /// assert_eq!(test_matrix.minor(&[0, 2], &[1,2]).expect("Unable to create minor"), -6.0);
+    /// assert_eq!(test_matrix.minor(&[0, 1], &[0,1]).expect("Unable to create minor"), -13.0);
+    /// ```
     pub fn minor(
         &self,
         column_indices: &[usize],
@@ -352,6 +590,7 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         submatrix.determinant()
     }
 
+    /// Convenience function to identify a non-singular matrix
     pub fn is_nonsingular(&self) -> Result<bool, &'static str> {
         match self.determinant() {
             Err(error) => Err(error),
@@ -359,6 +598,7 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         }
     }
 
+    /// Creates a matrix of cofactors from a matrix
     pub fn matrix_of_cofactors(&self) -> Result<Self, &'static str> {
         let mut entries: Vec<T> = Vec::new();
         let mut sign = T::from(1);
@@ -394,6 +634,33 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         })
     }
 
+    /// Caluculates the adjoint of a matrix
+    /// ```
+    /// use matrix::matrix_algebra::Matrix;
+    /// let test_matrix = Matrix::new(3, 3, [3.0, 4.0, 3.0, 5.0, 7.0, 2.0, 0.0, 0.0, 1.0].to_vec());
+    ///
+    /// assert_eq!(
+    ///     test_matrix
+    ///         .adjoint()
+    ///         .expect("test_adjoint: unable to calculate matrix adjoint"),
+    ///     Matrix::new(
+    ///         3,
+    ///         3,
+    ///         [
+    ///             7.0,
+    ///             -4.0,
+    ///             -13.0,
+    ///             -5.0,
+    ///             3.0,
+    ///             9.0,
+    ///             0.0,
+    ///             0.0,
+    ///             1.0000000000000018
+    ///         ]
+    ///         .to_vec()
+    ///     )
+    /// );
+    /// ```
     pub fn adjoint(&self) -> Result<Self, &'static str> {
         match self.matrix_of_cofactors() {
             Ok(matrix_of_cofactors) => Ok(matrix_of_cofactors.transpose()),
@@ -401,6 +668,39 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         }
     }
 
+    /// Calculates the inverse of a matrix
+    /// ```
+    /// use matrix::matrix_algebra::Matrix;
+    /// let test_matrix = Matrix::new(
+    ///     3,
+    ///     3,
+    ///     [2.0, 3.0, 0.0, 0.0, 3.0, -3.0, -2.0, 3.0, 3.0].to_vec(),
+    /// );
+    ///
+    /// let inverse = test_matrix
+    /// .inverse()
+    /// .expect("Unable to compute matrix inverse in test_inverse");
+    ///
+    /// assert_eq!(inverse.m, 3);
+    /// assert_eq!(inverse.n, 3);
+    ///
+    /// let expected = [
+    ///     1.0 / 3.0,
+    ///     -1.0 / 6.0,
+    ///     -1.0 / 6.0,
+    ///     1.0 / 9.0,
+    ///     1.0 / 9.0,
+    ///     1.0 / 9.0,
+    ///     1.0 / 9.0,
+    ///     -2.0 / 9.0,
+    ///     1.0 / 9.0,
+    ///     ]
+    ///     .to_vec();
+    ///     
+    ///     for i in 0..expected.len() {
+    ///         assert!(expected[i] - inverse.entries[i] < 1.0 / 1000000000000000.0);
+    ///     }
+    /// ```
     pub fn inverse(&self) -> Result<Self, &'static str> {
         if self.n != self.m {
             return Err("Unable to compute inverse when n is not equal to m");
@@ -434,6 +734,35 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         }
     }
 
+    /// Partitions a matrix based on the provided column and row indices
+    /// ```
+    /// use matrix::matrix_algebra::Matrix;
+    /// let test_matrix = Matrix::new(
+    /// 5,
+    /// 5,
+    /// [
+    ///     1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0,
+    ///     16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0,
+    /// ]
+    /// .to_vec(),
+    /// );
+    ///
+    /// let submatrices = test_matrix.partition(&[3, 2], &[2, 3]);
+    ///
+    /// assert_eq!(
+    ///     submatrices,
+    ///     [
+    ///         Matrix::new(2, 3, [1.0, 2.0, 3.0, 6.0, 7.0, 8.0].to_vec()),
+    ///         Matrix::new(2, 2, [4.0, 5.0, 9.0, 10.0].to_vec()),
+    ///         Matrix::new(
+    ///             3,
+    ///             3,
+    ///             [11.0, 12.0, 13.0, 16.0, 17.0, 18.0, 21.0, 22.0, 23.0].to_vec()
+    ///         ),
+    ///         Matrix::new(3, 2, [14.0, 15.0, 19.0, 20.0, 24.0, 25.0].to_vec())
+    ///     ]
+    /// );
+    /// ```
     pub fn partition(
         &self,
         column_partitioning: &[usize],
@@ -465,6 +794,25 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
         partitioned_matrices
     }
 
+    /// Generates a submatrix based on the provided column
+    /// and row indices
+    /// ```
+    /// use matrix::matrix_algebra::Matrix;
+    /// let test_matrix = Matrix::new(
+    ///     5,
+    ///     5,
+    ///     [
+    ///         1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0,
+    ///         16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0,
+    ///     ]
+    ///     .to_vec(),
+    /// );
+    ///
+    /// let submatrix = test_matrix.submatrix(&[1, 3], &[0, 2, 4]);
+    /// assert_eq!(submatrix.n, 2);
+    /// assert_eq!(submatrix.m, 3);
+    /// assert_eq!(submatrix.entries, [2.0, 4.0, 12.0, 14.0, 22.0, 24.0]);
+    /// ```
     pub fn submatrix(&self, column_indices: &[usize], row_indices: &[usize]) -> Self {
         let rows = self.rows();
         let mut new_entries: Vec<T> = Vec::new();
@@ -485,6 +833,8 @@ impl<T: MatrixElementRequiredTraits<T>> Matrix<T> {
     }
 }
 
+/// Implementation of the Display trait for Matrix<T>
+/// which can be used for debugging purposes
 impl<T: MatrixElementRequiredTraits<T>> fmt::Display for Matrix<T> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         let rows = self.rows();
@@ -523,6 +873,28 @@ impl<T: MatrixElementRequiredTraits<T>> fmt::Display for Matrix<T> {
     }
 }
 
+/// Convenience initialiser that creates a `Matrix<T>` using the default
+/// value of the type
+/// ```
+/// use matrix::matrix_algebra::{Matrix, new_all_default};
+/// use rand::prelude::*;
+/// let mut rng = rand::thread_rng();
+/// let n = rng.gen_range(1..=100);
+/// let m = rng.gen_range(1..=100);
+/// let test_matrix_f64 = new_all_default::<f64>(m, n)
+///     .expect("test_new_all_default: unable to create test_matrix_f64");
+///
+/// for entry in test_matrix_f64.entries {
+///     assert_eq!(entry, f64::default());
+/// }
+///
+/// let test_matrix_f32 = new_all_default::<f32>(m, n)
+///     .expect("test_new_all_default: unable to create test_matrix_f64");
+///
+/// for entry in test_matrix_f32.entries {
+///     assert_eq!(entry, f32::default());
+/// }
+/// ```
 pub fn new_all_default<T>(m: usize, n: usize) -> Result<Matrix<T>, &'static str>
 where
     T: MatrixElementRequiredTraits<T>,
@@ -538,6 +910,28 @@ where
     })
 }
 
+/// Creates an identity matrix of the specified dimension using whatever
+/// corresponds to unity for type T
+/// ```
+/// use matrix::matrix_algebra::{Matrix, new_identity_matrix};
+/// use rand::prelude::*;
+/// let mut rng = rand::thread_rng();
+/// let dimension = rng.gen_range(1..=100);
+///
+/// let test_matrix_f64 = new_identity_matrix::<f64>(dimension)
+///     .expect("test_new_identity_matrix: unable to create test_matrix_f64");
+///
+/// for index in 0..dimension {
+///     assert_eq!(*test_matrix_f64.get_entry_ij(index, index), 1.0);
+/// }
+///
+/// let test_matrix_f32 = new_identity_matrix::<f32>(dimension)
+///     .expect("test_new_identity_matrix: unable to create test_matrix_f64");
+///
+/// for index in 0..dimension {
+///     assert_eq!(*test_matrix_f32.get_entry_ij(index, index), 1.0);
+/// }
+/// ```
 pub fn new_identity_matrix<T>(dimension: usize) -> Result<Matrix<T>, &'static str>
 where
     T: MatrixElementRequiredTraits<T>,
@@ -555,6 +949,34 @@ where
     }
 }
 
+/// Implementation of matrix addition
+/// ```
+/// use matrix::matrix_algebra::Matrix;
+/// let test_matrix_a = Matrix::new(
+///     3,
+///     4,
+///     [
+///         1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0,
+///     ]
+///     .to_vec(),
+/// );
+/// let test_matrix_b = Matrix::new(
+///     3,
+///     4,
+///     [
+///         12.0, 11.0, 10.0, 9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0,
+///     ]
+///     .to_vec(),
+/// );
+///
+/// let matrix_sum = test_matrix_a + test_matrix_b;
+///
+/// assert_eq!(matrix_sum.entries.len(), 12);
+/// assert_eq!(
+///     matrix_sum.entries,
+///     [13.0, 13.0, 13.0, 13.0, 13.0, 13.0, 13.0, 13.0, 13.0, 13.0, 13.0, 13.0]
+/// );
+/// ```
 fn matrix_add<T: MatrixElementRequiredTraits<T>>(
     a: &Matrix<T>,
     b: &Matrix<T>,
@@ -581,6 +1003,8 @@ where
     })
 }
 
+/// Implementation of the `Add` trait for `Matrix<T>`
+/// Uses `matrix_add`
 impl<T: MatrixElementRequiredTraits<T>> Add for Matrix<T>
 where
     for<'a> &'a T: Add<Output = T>,
@@ -595,6 +1019,46 @@ where
     }
 }
 
+/// Implementation of the `Mul` trait for `Matrix<T>`
+/// Uses `matrix_multiply`
+/// ```
+/// use matrix::matrix_algebra::Matrix;
+/// let test_matrix_a = Matrix::new(
+///     3,
+///     4,
+///     [
+///         1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0,
+///     ]
+///     .to_vec(),
+/// );
+/// let test_matrix_b = Matrix::new(
+///     4,
+///     3,
+///     [
+///         12.0, 11.0, 10.0, 9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0,
+///     ]
+///     .to_vec(),
+/// );
+///
+/// let matrix_product = test_matrix_a * test_matrix_b;
+///
+/// assert_eq!(matrix_product.entries.len(), 9);
+///
+/// assert_eq!(
+/// matrix_product.entries,
+///     [
+///         1.0 * 12.0 + 2.0 * 9.0 + 3.0 * 6.0 + 4.0 * 3.0,
+///         1.0 * 11.0 + 2.0 * 8.0 + 3.0 * 5.0 + 4.0 * 2.0,
+///         1.0 * 10.0 + 2.0 * 7.0 + 3.0 * 4.0 + 4.0 * 1.0,
+///         5.0 * 12.0 + 6.0 * 9.0 + 7.0 * 6.0 + 8.0 * 3.0,
+///         5.0 * 11.0 + 6.0 * 8.0 + 7.0 * 5.0 + 8.0 * 2.0,
+///         5.0 * 10.0 + 6.0 * 7.0 + 7.0 * 4.0 + 8.0 * 1.0,
+///         9.0 * 12.0 + 10.0 * 9.0 + 11.0 * 6.0 + 12.0 * 3.0,
+///         9.0 * 11.0 + 10.0 * 8.0 + 11.0 * 5.0 + 12.0 * 2.0,
+///         9.0 * 10.0 + 10.0 * 7.0 + 11.0 * 4.0 + 12.0 * 1.0
+///     ]
+/// );
+/// ```
 impl<T: MatrixElementRequiredTraits<T>> Mul for Matrix<T> {
     type Output = Self;
 
@@ -606,6 +1070,8 @@ impl<T: MatrixElementRequiredTraits<T>> Mul for Matrix<T> {
     }
 }
 
+/// Helper function to check that two matrices
+/// can be multiplied
 fn is_multiplicatively_conformable<T: MatrixElementRequiredTraits<T>>(
     a: &Matrix<T>,
     b: &Matrix<T>,
@@ -613,6 +1079,8 @@ fn is_multiplicatively_conformable<T: MatrixElementRequiredTraits<T>>(
     a.n == b.m
 }
 
+/// Helper function to check that two matrices
+/// can be summed
 fn is_additively_conformable<T: MatrixElementRequiredTraits<T>>(
     a: &Matrix<T>,
     b: &Matrix<T>,
@@ -620,6 +1088,9 @@ fn is_additively_conformable<T: MatrixElementRequiredTraits<T>>(
     a.n == b.n && a.m == b.m
 }
 
+/// Multiplication of two matrices
+/// This is currently a naive implementation with no
+/// optimisations.
 fn matrix_multiply<T: MatrixElementRequiredTraits<T>>(
     a: &Matrix<T>,
     b: &Matrix<T>,

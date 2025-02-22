@@ -1,3 +1,5 @@
+/// A trait created to represent types that expose a
+/// square root method. Relies explicitly on `sqrt`
 pub trait Sqrt {
     fn square_root(&self) -> Self;
 }

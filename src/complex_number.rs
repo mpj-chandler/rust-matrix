@@ -4,6 +4,12 @@ use std::{
     ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub},
 };
 
+/// These are the traits required for `ComplexNumber`
+/// to work with `Matrix`
+/// These are identical to `MatrixElementRequiredTraits`
+/// and should be combined at some point
+/// Note the trait `From<u8>` is required in order to
+/// create identity matrices
 pub trait ComplexNumberRequiredTraits<T>:
     Add<Output = T>
     + Sub<Output = T>
@@ -59,6 +65,21 @@ impl<T: ComplexNumberRequiredTraits<T>> ComplexNumber<T> {
         ComplexNumber { real, complex }
     }
 
+    /// Creates a new complex number that is the complex conjugate
+    /// of the original
+    /// ```
+    /// use matrix::complex_number::ComplexNumber;
+    /// use rand::prelude::*;
+    /// let mut rng = rand::thread_rng();
+    /// let real = rng.gen_range(1.0..=100.0);
+    /// let complex = rng.gen_range(1.0..=100.0);
+    /// let complex_number = ComplexNumber::new(real, complex);
+    ///
+    /// assert_eq!(
+    ///     complex_number.complex_conjugate(),
+    ///     ComplexNumber::new(real, -complex,)
+    /// );
+    /// ```
     pub fn complex_conjugate(&self) -> Self {
         ComplexNumber {
             real: self.real,
@@ -66,16 +87,41 @@ impl<T: ComplexNumberRequiredTraits<T>> ComplexNumber<T> {
         }
     }
 
+    /// Calculates the cartesian magnitude of a complex number
+    /// Requires T to implement the `sqrt` trait which
+    /// exposes the `square_root()` method
+    /// ```
+    /// use matrix::complex_number::ComplexNumber;
+    /// let test_complex_number = ComplexNumber::new(3.0, 4.0);
+    /// assert_eq!(test_complex_number.magnitude(), 5.0);
+    /// ```
     pub fn magnitude(&self) -> T {
         ((self.real * self.real) + (self.complex * self.complex)).square_root()
     }
 
+    /// Creates a new complex number that is a normalised
+    /// copy of the first.
+    /// ```
+    ///
+    /// use matrix::complex_number::ComplexNumber;
+    /// let test_complex_number = ComplexNumber::new(3.0, 4.0);
+    /// let normalised = test_complex_number.normalized();
+    /// assert_eq!(normalised.real, 0.6);
+    /// assert_eq!(normalised.complex, 0.8);
+    /// ```
     pub fn normalized(&self) -> Self {
         let magnitude = self.magnitude();
 
         ComplexNumber::new(self.real / magnitude, self.complex / magnitude)
     }
 
+    /// Calculates the square root of a complex number
+    /// ```
+    /// use matrix::complex_number::ComplexNumber;
+    /// let complex = ComplexNumber::new(3.0, 4.0);
+    ///
+    /// assert_eq!(complex.square_root(), ComplexNumber::new(2.0, 1.0));
+    /// ```
     pub fn square_root(&self) -> Self {
         let magnitude = self.magnitude();
         let real = ((magnitude + self.real) / 2.into()).square_root();
@@ -87,6 +133,8 @@ impl<T: ComplexNumberRequiredTraits<T>> ComplexNumber<T> {
         ComplexNumber::new(real, complex)
     }
 
+    /// Implementation of the Pow trait for ComplexNumber
+    ///
     pub fn powf(&self, n: T) -> Self {
         if n == T::default() {
             return ComplexNumber::new(T::from(1), T::default());

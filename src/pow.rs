@@ -1,3 +1,8 @@
+/// A trait created to represent raising an element
+/// to a given power.
+/// This explicitly relies on the `powf` trait
+/// and thus will only work for types that implement
+/// that trait
 pub trait Pow {
     fn pow(&self, n: Self) -> Self;
 }
