@@ -87,16 +87,41 @@ impl<T: ComplexNumberRequiredTraits<T>> ComplexNumber<T> {
         }
     }
 
+    /// Calculates the cartesian magnitude of a complex number
+    /// Requires T to implement the `sqrt` trait which
+    /// exposes the `square_root()` method
+    /// ```
+    /// use matrix::complex_number::ComplexNumber;
+    /// let test_complex_number = ComplexNumber::new(3.0, 4.0);
+    /// assert_eq!(test_complex_number.magnitude(), 5.0);
+    /// ```
     pub fn magnitude(&self) -> T {
         ((self.real * self.real) + (self.complex * self.complex)).square_root()
     }
 
+    /// Creates a new complex number that is a normalised
+    /// copy of the first.
+    /// ```
+    ///
+    /// use matrix::complex_number::ComplexNumber;
+    /// let test_complex_number = ComplexNumber::new(3.0, 4.0);
+    /// let normalised = test_complex_number.normalized();
+    /// assert_eq!(normalised.real, 0.6);
+    /// assert_eq!(normalised.complex, 0.8);
+    /// ```
     pub fn normalized(&self) -> Self {
         let magnitude = self.magnitude();
 
         ComplexNumber::new(self.real / magnitude, self.complex / magnitude)
     }
 
+    /// Calculates the square root of a complex number
+    /// ```
+    /// use matrix::complex_number::ComplexNumber;
+    /// let complex = ComplexNumber::new(3.0, 4.0);
+    ///
+    /// assert_eq!(complex.square_root(), ComplexNumber::new(2.0, 1.0));
+    /// ```
     pub fn square_root(&self) -> Self {
         let magnitude = self.magnitude();
         let real = ((magnitude + self.real) / 2.into()).square_root();
