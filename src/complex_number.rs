@@ -4,6 +4,12 @@ use std::{
     ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub},
 };
 
+/// These are the traits required for `ComplexNumber`
+/// to work with `Matrix`
+/// These are identical to `MatrixElementRequiredTraits`
+/// and should be combined at some point
+/// Note the trait `From<u8>` is required in order to
+/// create identity matrices
 pub trait ComplexNumberRequiredTraits<T>:
     Add<Output = T>
     + Sub<Output = T>
@@ -59,6 +65,21 @@ impl<T: ComplexNumberRequiredTraits<T>> ComplexNumber<T> {
         ComplexNumber { real, complex }
     }
 
+    /// Creates a new complex number that is the complex conjugate
+    /// of the original
+    /// ```
+    /// use matrix::complex_number::ComplexNumber;
+    /// use rand::prelude::*;
+    /// let mut rng = rand::thread_rng();
+    /// let real = rng.gen_range(1.0..=100.0);
+    /// let complex = rng.gen_range(1.0..=100.0);
+    /// let complex_number = ComplexNumber::new(real, complex);
+    ///
+    /// assert_eq!(
+    ///     complex_number.complex_conjugate(),
+    ///     ComplexNumber::new(real, -complex,)
+    /// );
+    /// ```
     pub fn complex_conjugate(&self) -> Self {
         ComplexNumber {
             real: self.real,
