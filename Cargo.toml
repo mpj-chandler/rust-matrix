@@ -1,7 +1,12 @@
 [package]
 name = "matrix"
-version = "0.1.0"
+version = "1.0.0-alpha"
 edition = "2021"
+description = "An implementation of foundational matrix operations for matrices containing <f32>, <f64> or complex numbers built from those types."
+readme = "README.md"
+repository = "https://github.com/mpj-chandler/rust-matrix"
+license = "MIT"
+categories = ["mathematics"]
 
 [dependencies]
 
